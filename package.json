@@ -1,0 +1,44 @@
+{
+  "name": "@bigapi/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for bigapi.dev – the output layer for AI agents: render HTML/Markdown to PDF, merge/split/compress PDFs, convert images. One cent per operation.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node test/smoke.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "pdf",
+    "render",
+    "html-to-pdf",
+    "markdown-to-pdf",
+    "image",
+    "agent",
+    "tools",
+    "bigapi"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.4.3"
+  },
+  "type": "module",
+  "bin": {
+    "bigapi-mcp": "src/index.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "homepage": "https://bigapi.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BiGapi-2026/bigapi-mcp"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
