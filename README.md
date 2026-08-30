@@ -1,20 +1,29 @@
 # @bigapi/mcp
 
-MCP server for **[bigapi.dev](https://bigapi.dev)** – *the output layer for AI agents.*
+[![npm version](https://img.shields.io/npm/v/%40bigapi%2Fmcp)](https://www.npmjs.com/package/@bigapi/mcp)
+[![bigapi-mcp MCP server](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp/badges/score.svg)](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp)
 
-Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself:
+MCP server for **[bigapi.dev](https://bigapi.dev)** – *deterministic file operations for AI agents.*
+
+Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself – over plain HTTPS, with one key, nothing to install server-side:
 
 | Tool | What it does |
 |---|---|
-| `render` | HTML / Markdown / URL → **PDF** or **PNG** (reports, invoices, offers, screenshots) |
+| `render` | HTML / Markdown / URL → **PDF** or **PNG** via server-side Chromium (reports, invoices, offers, documentation) |
+| `screenshot` | Any public URL, real device presets (desktop / laptop / tablet / mobile), full page |
+| `ocr` | Scanned PDF or photo → searchable PDF, plain text, or per-page JSON (`deu`, `eng`, `deu+eng`, …) |
+| `office_to_pdf` | DOCX, XLSX, PPTX, ODT, RTF, CSV, TXT → PDF via server-side LibreOffice |
+| `pdf_to_pdfa` | PDF → archival **PDF/A-2b** with embedded fonts (long-term storage, compliance) |
 | `pdf_merge` · `pdf_split` · `pdf_rotate` · `pdf_compress` | The PDF basics |
 | `pdf_to_images` | PDF pages → JPEG/PNG, e.g. to look at a document with a vision model |
 | `image_process` | Resize, crop, rotate, convert (webp/avif/…), compress, strip EXIF, watermark – one call |
 | `image_info` | Format, dimensions, color space, EXIF/ICC presence |
-| `get_access` | Free API key, instantly, no signup – 100 free operations |
+| `get_access` | Free API key, instantly, no signup – 100 free operations that **never expire** |
 | `get_balance` · `get_usage` · `set_monthly_cap` · `get_pricing` | Account |
 
-**1 cent per operation. 100 free. Balance never expires. Failed calls are free.** Servers in Germany, files deleted after delivery.
+**$0.01 per operation. 100 free. Free operations and balance never expire. Failed calls are free.** Servers in Germany, GDPR, files deleted after delivery.
+
+Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as `dev.bigapi/mcp`.
 
 ## Install
 
@@ -51,6 +60,10 @@ Same block in the respective MCP settings (`.cursor/mcp.json`, `~/.codeium/winds
 
 Inputs are local paths (`/Users/me/report.pdf`, `C:\Users\me\scan.pdf`). Outputs are written to `output_path` if given, otherwise to a temp folder (`BIGAPI_OUTPUT_DIR` to change). Every result includes the cost, what it was charged from, and the remaining balance.
 
+## Pricing
+
+Flat **$0.01 per operation** (per page for `ocr` and `office_to_pdf`, $0.05 for `pdf_to_pdfa`). Prepaid from $5 – no subscription, no signup, balance never expires, failed calls are free. Machine-readable: `get_pricing` or `GET /v1/pricing`.
+
 ## Environment
 
 | Variable | Default | Purpose |
@@ -71,7 +84,7 @@ curl -o out.pdf https://api.bigapi.dev/v1/render \
   -d '{"markdown":"# Hello from an agent"}'
 ```
 
-OpenAPI: https://api.bigapi.dev/openapi.json · Docs: https://api.bigapi.dev/docs · llms.txt: https://api.bigapi.dev/llms.txt
+OpenAPI: https://api.bigapi.dev/openapi.json · Docs: https://api.bigapi.dev/docs · Guides: https://bigapi.dev/guides/ · llms.txt: https://api.bigapi.dev/llms.txt
 
 ## License
 
