@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "dev.bigapi/mcp",
-  "description": "Render HTML/Markdown to PDF, merge/split/compress PDFs, PDF pages to images, resize/convert images. 1 cent per operation, 100 free, no signup.",
+  "description": "File operations for AI agents: HTML/Markdown to PDF, PDF tools, OCR, images. $0.01/op, 100 free.",
   "repository": { "url": "https://github.com/BiGapi-2026/bigapi-mcp", "source": "github" },
   "version": "0.3.2",
   "packages": [
