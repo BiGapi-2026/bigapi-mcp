@@ -1,6 +1,6 @@
 {
   "name": "@bigapi/mcp",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "MCP server for bigapi.dev – the output layer for AI agents: render HTML/Markdown to PDF, merge/split/compress PDFs, convert images. One cent per operation.",
   "main": "index.js",
   "scripts": {
@@ -40,5 +40,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "mcpName": "dev.bigapi/mcp"
 }

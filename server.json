@@ -3,9 +3,9 @@
   "name": "dev.bigapi/mcp",
   "description": "Render HTML/Markdown to PDF, merge/split/compress PDFs, PDF pages to images, resize/convert images. 1 cent per operation, 100 free, no signup.",
   "repository": { "url": "https://github.com/BiGapi-2026/bigapi-mcp", "source": "github" },
-  "version": "0.1.0",
+  "version": "0.3.2",
   "packages": [
-    { "registryType": "npm", "identifier": "@bigapi/mcp", "version": "0.1.0", "transport": { "type": "stdio" },
+    { "registryType": "npm", "identifier": "@bigapi/mcp", "version": "0.3.2", "transport": { "type": "stdio" },
       "environmentVariables": [ { "name": "BIGAPI_KEY", "description": "Optional API key (otherwise call the get_access tool)", "isRequired": false, "isSecret": true } ] }
   ]
 }
