@@ -47,12 +47,13 @@ export async function apiJson(method, path, body, { auth = true } = {}) {
   return res.json();
 }
 
-// Operation mit JSON-Body (render) → Datei
+// Operation mit JSON-Body (render, url→md, md→docx) → Datei oder JSON
 export async function opJson(path, body, outName, idem) {
   const headers = { 'content-type': 'application/json', ...(await authHeaders()) };
   if (idem) headers['Idempotency-Key'] = idem;
   const res = await fetch(BASE_URL + path, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) throw await parseError(res);
+  if ((res.headers.get('content-type') || '').includes('application/json')) return { json: await res.json(), ...billing(res) };
   return saveResponse(res, outName);
 }
 
@@ -75,7 +76,7 @@ export async function opFiles(path, files, fields = {}, outName, idem) {
 
 async function saveResponse(res, outName) {
   const ct = res.headers.get('content-type') || 'application/octet-stream';
-  const ext = ct.includes('pdf') ? '.pdf' : ct.includes('png') ? '.png' : ct.includes('jpeg') ? '.jpg' : ct.includes('webp') ? '.webp' : ct.includes('avif') ? '.avif' : ct.includes('zip') ? '.zip' : ct.includes('tiff') ? '.tiff' : ct.includes('gif') ? '.gif' : '';
+  const ext = ct.includes('pdf') ? '.pdf' : ct.includes('png') ? '.png' : ct.includes('jpeg') ? '.jpg' : ct.includes('webp') ? '.webp' : ct.includes('avif') ? '.avif' : ct.includes('zip') ? '.zip' : ct.includes('tiff') ? '.tiff' : ct.includes('gif') ? '.gif' : ct.includes('markdown') ? '.md' : ct.includes('wordprocessingml') ? '.docx' : ct.includes('csv') ? '.csv' : ct.includes('text/plain') ? '.txt' : '';
   let out;
   if (outName) { out = resolve(outName); if (!extname(out)) out += ext; }
   else { await mkdir(OUT_DIR, { recursive: true }); out = join(OUT_DIR, `bigapi-${Date.now()}${ext}`); }

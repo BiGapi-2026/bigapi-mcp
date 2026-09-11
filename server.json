@@ -1,11 +1,28 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "dev.bigapi/mcp",
-  "description": "File operations for AI agents: HTML/Markdown to PDF, PDF tools, OCR, images. $0.01/op, 100 free.",
-  "repository": { "url": "https://github.com/BiGapi-2026/bigapi-mcp", "source": "github" },
-  "version": "0.3.3",
+  "description": "File operations for AI agents: PDF, extraction, OCR, images. $0.01/op, 100 free.",
+  "repository": {
+    "url": "https://github.com/BiGapi-2026/bigapi-mcp",
+    "source": "github"
+  },
+  "version": "0.4.0",
   "packages": [
-    { "registryType": "npm", "identifier": "@bigapi/mcp", "version": "0.3.3", "transport": { "type": "stdio" },
-      "environmentVariables": [ { "name": "BIGAPI_KEY", "description": "Optional API key (otherwise call the get_access tool)", "isRequired": false, "isSecret": true } ] }
+    {
+      "registryType": "npm",
+      "identifier": "@bigapi/mcp",
+      "version": "0.4.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BIGAPI_KEY",
+          "description": "Optional API key (otherwise call the get_access tool)",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
   ]
 }
