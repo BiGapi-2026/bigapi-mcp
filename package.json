@@ -1,7 +1,7 @@
 {
   "name": "@bigapi/mcp",
-  "version": "0.4.0",
-  "description": "MCP server for bigapi.dev – the output layer for AI agents: render HTML/Markdown to PDF, merge/split/compress PDFs, extract text/tables/metadata from PDFs, web pages to Markdown, Markdown to Word, convert images. One cent per operation.",
+  "version": "0.5.0",
+  "description": "MCP server for bigapi.dev – file operations for AI agents: render/merge/protect/redact/compare PDFs, extract text/tables from PDF/DOCX/XLSX/PPTX/EPUB, RAG chunking, charts, QR, email to PDF, C2PA Content Credentials. One cent per operation.",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",

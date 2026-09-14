@@ -1,96 +1,153 @@
-# @bigapi/mcp
+# MCP Registry
 
-[![npm version](https://img.shields.io/npm/v/%40bigapi%2Fmcp)](https://www.npmjs.com/package/@bigapi/mcp)
-[![bigapi-mcp MCP server](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp/badges/score.svg)](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp)
+The MCP registry provides MCP clients with a list of MCP servers, like an app store for MCP servers.
 
-MCP server for **[bigapi.dev](https://bigapi.dev)** – *deterministic file operations for AI agents.*
+[**📤 Publish my MCP server**](docs/modelcontextprotocol-io/quickstart.mdx) | [**⚡️ Live API docs**](https://registry.modelcontextprotocol.io/docs) | [**👀 Ecosystem vision**](docs/design/ecosystem-vision.md) | 📖 **[Full documentation](./docs)**
 
-Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself – over plain HTTPS, with one key, nothing to install server-side:
+## Development Status
 
-| Tool | What it does |
-|---|---|
-| `render` | HTML / Markdown / URL → **PDF** or **PNG** via server-side Chromium (reports, invoices, offers, documentation) |
-| `screenshot` | Any public URL, real device presets (desktop / laptop / tablet / mobile), full page |
-| `ocr` | Scanned PDF or photo → searchable PDF, plain text, or per-page JSON (`deu`, `eng`, `deu+eng`, …) |
-| `office_to_pdf` | DOCX, XLSX, PPTX, ODT, RTF, CSV, TXT → PDF via server-side LibreOffice |
-| `pdf_to_pdfa` | PDF → archival **PDF/A-2b** with embedded fonts (long-term storage, compliance) |
-| `pdf_merge` · `pdf_split` · `pdf_rotate` · `pdf_compress` | The PDF basics |
-| `pdf_to_images` | PDF pages → JPEG/PNG, e.g. to look at a document with a vision model |
-| `pdf_to_markdown` | PDF → clean, reflowed **Markdown** (summarising, RAG ingestion) |
-| `pdf_extract_tables` | Tables out of a PDF as **JSON rows or CSV** (invoices, reports, statements) |
-| `pdf_info` | Page count, title, PDF version, encryption, page size – as JSON |
-| `url_to_markdown` | Any public web page (JavaScript included) → GitHub-flavoured Markdown |
-| `md_to_docx` | Markdown – e.g. an LLM answer – → formatted **Word** document |
-| `image_process` | Resize, crop, rotate, convert (webp/avif/…), compress, strip EXIF, watermark – one call |
-| `image_info` | Format, dimensions, color space, EXIF/ICC presence |
-| `get_access` | Free API key, instantly, no signup – 100 free operations that **never expire** |
-| `get_balance` · `get_usage` · `set_monthly_cap` · `get_pricing` | Account |
+**2025-10-24 update**: The Registry API has entered an **API freeze (v0.1)** 🎉. For the next month or more, the API will remain stable with no breaking changes, allowing integrators to confidently implement support. This freeze applies to v0.1 while development continues on v0. We'll use this period to validate the API in real-world integrations and gather feedback to shape v1 for general availability. Thank you to everyone for your contributions and patience—your involvement has been key to getting us here!
 
-**$0.01 per operation. 100 free. Free operations and balance never expire. Failed calls are free.** Servers in Germany, GDPR, files deleted after delivery.
+**2025-09-08 update**: The registry has launched in preview 🎉 ([announcement blog post](https://blog.modelcontextprotocol.io/posts/2025-09-08-mcp-registry-preview/)). While the system is now more stable, this is still a preview release and breaking changes or data resets may occur. A general availability (GA) release will follow later. We'd love your feedback in [GitHub discussions](https://github.com/modelcontextprotocol/registry/discussions/new?category=ideas) or in the [#registry-dev Discord](https://discord.com/channels/1358869848138059966/1369487942862504016) ([joining details here](https://modelcontextprotocol.io/community/communication)).
 
-Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as `dev.bigapi/mcp`.
+Registry Working Group:
+- **Radoslav (Rado) Dimitrov** (Stacklok) [@rdimitrov](https://github.com/rdimitrov) - WG Lead
+- **Tadas Antanavicius** (PulseMCP) [@tadasant](https://github.com/tadasant)
+- **Bob Dickinson** (TeamSpark) [@BobDickinson](https://github.com/BobDickinson)
+- **Preeti (Pree) Dewani** (Ravenmail) [@pree-dew](https://github.com/pree-dew)
 
-## Install
+## Contributing
 
-Requires Node 18+. No API key needed up front – the agent can call `get_access` itself.
+We use multiple channels for collaboration - see [modelcontextprotocol.io/community/communication](https://modelcontextprotocol.io/community/communication).
 
-### Claude Desktop
+Often (but not always) ideas flow through this pipeline:
 
-`claude_desktop_config.json` (Settings → Developer → Edit Config):
+- **[Discord](https://modelcontextprotocol.io/community/communication)** - Real-time community discussions
+- **[Discussions](https://github.com/modelcontextprotocol/registry/discussions)** - Propose and discuss product/technical requirements
+- **[Issues](https://github.com/modelcontextprotocol/registry/issues)** - Track well-scoped technical work  
+- **[Pull Requests](https://github.com/modelcontextprotocol/registry/pulls)** - Contribute work towards issues
 
-```json
-{
-  "mcpServers": {
-    "bigapi": {
-      "command": "npx",
-      "args": ["-y", "@bigapi/mcp"]
-    }
-  }
-}
-```
+### Quick start:
 
-Restart Claude Desktop. Then: *"Get bigapi access and render this text as a PDF on my Desktop."*
+#### Pre-requisites
 
-### Cursor / Windsurf / Cline
+- **Docker**
+- **Go 1.24.x**
+- **ko** - Container image builder for Go ([installation instructions](https://ko.build/install/))
+- **golangci-lint v2.4.0**
 
-Same block in the respective MCP settings (`.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, Cline → MCP Servers → Configure).
-
-### With an existing key
-
-```json
-"bigapi": { "command": "npx", "args": ["-y", "@bigapi/mcp"], "env": { "BIGAPI_KEY": "bigapi_..." } }
-```
-
-## How files work
-
-Inputs are local paths (`/Users/me/report.pdf`, `C:\Users\me\scan.pdf`). Outputs are written to `output_path` if given, otherwise to a temp folder (`BIGAPI_OUTPUT_DIR` to change). Every result includes the cost, what it was charged from, and the remaining balance.
-
-## Pricing
-
-Flat **$0.01 per operation** – every operation, no exceptions (per page for `ocr`, `office_to_pdf`, `pdf_to_markdown` and `pdf_extract_tables`). Prepaid from $5 – no subscription, no signup, balance never expires, failed calls are free. Machine-readable: `get_pricing` or `GET /v1/pricing`.
-
-## Environment
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `BIGAPI_KEY` | – | Use this key instead of the stored one |
-| `BIGAPI_CONFIG_DIR` | `~/.bigapi` | Where `get_access` stores the key (`config.json`, mode 600) |
-| `BIGAPI_OUTPUT_DIR` | OS temp dir | Default output folder |
-| `BIGAPI_URL` | `https://api.bigapi.dev` | API base (for self-hosting / testing) |
-
-## Without MCP
-
-Plain HTTP works everywhere (n8n, Make, Zapier, LangChain, your code):
+#### Running the server
 
 ```bash
-curl -X POST https://api.bigapi.dev/v1/keys                       # → key
-curl -o out.pdf https://api.bigapi.dev/v1/render \
-  -H "Authorization: Bearer $KEY" -H "content-type: application/json" \
-  -d '{"markdown":"# Hello from an agent"}'
+# Start full development environment
+make dev-compose
 ```
 
-OpenAPI: https://api.bigapi.dev/openapi.json · Docs: https://api.bigapi.dev/docs · Guides: https://bigapi.dev/guides/ · llms.txt: https://api.bigapi.dev/llms.txt
+This starts the registry at [`localhost:8080`](http://localhost:8080) with PostgreSQL. The database uses ephemeral storage and is reset each time you restart the containers, ensuring a clean state for development and testing.
 
-## License
+**Note:** The registry uses [ko](https://ko.build) to build container images. The `make dev-compose` command automatically builds the registry image with ko and loads it into your local Docker daemon before starting the services.
 
-MIT
+By default, the registry seeds from the production API with a filtered subset of servers (to keep startup fast). This ensures your local environment mirrors production behavior and all seed data passes validation. For offline development you can seed from a file without validation with `MCP_REGISTRY_SEED_FROM=data/seed.json MCP_REGISTRY_ENABLE_REGISTRY_VALIDATION=false make dev-compose`.
+
+The setup can be configured with environment variables in [docker-compose.yml](./docker-compose.yml) - see [.env.example](./.env.example) for a reference.
+
+<details>
+<summary>Alternative: Running a pre-built Docker image</summary>
+
+Pre-built Docker images are automatically published to GitHub Container Registry. Note that the image does not bundle PostgreSQL, so you need to run your own and point the registry at it via `MCP_REGISTRY_DATABASE_URL` (see [docker-compose.yml](./docker-compose.yml) for a working example):
+
+```bash
+# Run latest stable release
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:latest
+
+# Run latest from main branch (continuous deployment)
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main
+
+# Run specific release version
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:v1.0.0
+
+# Run development build from main branch
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main-20250906-abc123d
+```
+
+**Available tags:** 
+- **Releases**: `latest`, `v1.0.0`, `v1.1.0`, etc.
+- **Continuous**: `main` (latest main branch build)
+- **Development**: `main-<date>-<sha>` (specific commit builds)
+
+</details>
+
+#### Publishing a server
+
+To publish a server, we've built a simple CLI. You can use it with:
+
+```bash
+# Build the latest CLI
+make publisher
+
+# Use it!
+./bin/mcp-publisher --help
+```
+
+See [the publisher guide](./docs/modelcontextprotocol-io/quickstart.mdx) for more details.
+
+#### Other commands
+
+```bash
+# Run lint, unit tests and integration tests
+make check
+```
+
+There are also a few more helpful commands for development. Run `make help` to learn more, or look in [Makefile](./Makefile).
+
+<!--
+For Claude and other AI tools: Always prefer make targets over custom commands where possible.
+-->
+
+## Architecture
+
+### Project Structure
+
+```
+├── cmd/                     # Application entry points
+│   └── publisher/           # Server publishing tool
+├── data/                    # Seed data
+├── deploy/                  # Deployment configuration (Pulumi)
+├── docs/                    # Documentation
+├── internal/                # Private application code
+│   ├── api/                 # HTTP handlers and routing
+│   ├── auth/                # Authentication (GitHub OAuth, JWT, namespace blocking)
+│   ├── config/              # Configuration management
+│   ├── database/            # Data persistence (PostgreSQL)
+│   ├── service/             # Business logic
+│   ├── telemetry/           # Metrics and monitoring
+│   └── validators/          # Input validation
+├── pkg/                     # Public packages
+│   ├── api/                 # API types and structures
+│   │   └── v0/              # Version 0 API types
+│   └── model/               # Data models for server.json
+├── scripts/                 # Development and testing scripts
+├── tests/                   # Integration tests
+└── tools/                   # CLI tools and utilities
+    └── validate-*.sh        # Schema validation tools
+```
+
+### Authentication
+
+Publishing supports multiple authentication methods:
+- **GitHub OAuth** - For publishing by logging into GitHub
+- **GitHub OIDC** - For publishing from GitHub Actions
+- **DNS verification** - For proving ownership of a domain and its subdomains
+- **HTTP verification** - For proving ownership of a domain
+
+The registry validates namespace ownership when publishing. E.g. to publish...:
+- `io.github.domdomegg/my-cool-mcp` you must login to GitHub as `domdomegg`, or be in a GitHub Action on domdomegg's repos
+- `me.adamjones/my-cool-mcp` you must prove ownership of `adamjones.me` via DNS or HTTP challenge
+
+## Community Projects
+
+Check out [community projects](docs/community-projects.md) to explore notable registry-related work created by the community.
+
+## More documentation
+
+See the [documentation](./docs) for more details if your question has not been answered here!

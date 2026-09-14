@@ -39,6 +39,34 @@ const mock = createServer(async (req, res) => {
   if (url === '/v1/md/to-docx') return send(200,
     { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ...billing },
     Buffer.from('PK\x03\x04MOCKDOCX'));
+  if (url === '/v1/text/chunk') return send(200, { 'content-type': 'application/json', ...billing },
+    JSON.stringify({ chunks: [{ text: 'Hallo', tokens: 2, page: 1, heading_path: [] }], chunk_count: 1, total_tokens: 2 }));
+  if (['/v1/docx/to-markdown', '/v1/xlsx/to-markdown', '/v1/pptx/to-markdown', '/v1/epub/to-markdown'].includes(url))
+    return send(200, { 'content-type': 'application/json', ...billing }, JSON.stringify({ markdown: '# Mock' }));
+  if (url === '/v1/pdf/outline') return send(200, { 'content-type': 'application/json', ...billing },
+    JSON.stringify({ has_outline: true, entries: 1, flat: [{ title: 'K1', page: 1, depth: 1 }] }));
+  if (url === '/v1/pdf/protect' || url === '/v1/pdf/unlock') return send(200,
+    { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-mockprot'));
+  if (url === '/v1/pdf/compare') return send(200, { 'content-type': 'application/json', ...billing, 'x-bigapi-pages': '1' },
+    JSON.stringify({ pages_compared: 1, pages_changed: 0, identical: true, per_page: [] }));
+  if (url === '/v1/pdf/redact') return send(200,
+    { 'content-type': 'application/pdf', ...billing, 'x-bigapi-pages': '1', 'x-bigapi-redactions': '2' }, Buffer.from('%PDF-mockredact'));
+  if (url === '/v1/pdf/verify-signature') return send(200, { 'content-type': 'application/json', ...billing },
+    JSON.stringify({ signed: false, signatures: [] }));
+  if (url === '/v1/email/to-pdf') return send(200, { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-mockmail'));
+  if (url === '/v1/template/render') return send(200, { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-mocktpl'));
+  if (url === '/v1/chart') return send(200, { 'content-type': 'image/png', ...billing }, Buffer.from('\x89PNGmock', 'latin1'));
+  if (url === '/v1/qr') {
+    const b = JSON.parse(body.toString());
+    if (b.format === 'svg') return send(200, { 'content-type': 'image/svg+xml', ...billing }, '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    return send(200, { 'content-type': 'image/png', ...billing }, Buffer.from('\x89PNGmock', 'latin1'));
+  }
+  if (url === '/v1/image/to-pdf') return send(200, { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-mockimg'));
+  if (url === '/v1/image/c2pa/sign') return send(200,
+    { 'content-type': 'image/jpeg', ...billing, 'x-bigapi-c2pa-cert': 'bigapi-cert' }, Buffer.from('\xff\xd8mock', 'latin1'));
+  if (url === '/v1/image/c2pa/verify') return send(200, { 'content-type': 'application/json', ...billing },
+    JSON.stringify({ has_credentials: true, active_manifest: { ai_generated: true } }));
+  if (url === '/v1/image/ai-label') return send(200, { 'content-type': 'image/jpeg', ...billing }, Buffer.from('\xff\xd8mock', 'latin1'));
   send(404, { 'content-type': 'application/json' }, JSON.stringify({ error: 'not_found', path: url }));
 });
 
@@ -61,8 +89,8 @@ const check = (name, cond, extra) => { console.log((cond ? '  ✓ ' : '  ✗ ') 
 const tools = await client.listTools();
 const names = tools.tools.map(t => t.name);
 console.log(`\ntools (${names.length}):`, names.join(', '));
-check('22 Tools registriert', names.length === 22, String(names.length));
-for (const t of ['pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx'])
+check('41 Tools registriert', names.length === 41, String(names.length));
+for (const t of ['pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx', 'text_chunk', 'docx_to_markdown', 'xlsx_to_markdown', 'pptx_to_markdown', 'epub_to_markdown', 'pdf_outline', 'pdf_protect', 'pdf_unlock', 'pdf_compare', 'pdf_redact', 'pdf_verify_signature', 'email_to_pdf', 'template_render', 'chart_render', 'qr_code', 'image_to_pdf', 'image_c2pa_sign', 'image_c2pa_verify', 'image_ai_label'])
   check(`Tool vorhanden: ${t}`, names.includes(t));
 
 const call = async (name, args) => {
@@ -99,7 +127,51 @@ r = await call('md_to_docx', { markdown: '# Hi\n\n**fett**' });
 const docxPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
 check('md_to_docx docx-Datei', docxPath && docxPath.endsWith('.docx') && readFileSync(docxPath).length > 0, docxPath || r.text.slice(0, 120));
 
+// --- 0.5.0-Tools ---
+r = await call('text_chunk', { text: '# A\n\nHallo Welt.' });
+check('text_chunk', !r.isError && r.text.includes('chunk_count'), r.isError ? r.text.slice(0, 120) : '');
+
+r = await call('docx_to_markdown', { file: testPdf });
+check('docx_to_markdown', !r.isError && r.text.includes('# Mock'));
+
+r = await call('pdf_outline', { file: testPdf });
+check('pdf_outline', !r.isError && r.text.includes('has_outline'));
+
+r = await call('pdf_protect', { file: testPdf, password: 'geheim123' });
+const protPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
+check('pdf_protect Datei', protPath && protPath.endsWith('.pdf'));
+
+r = await call('pdf_compare', { file_a: testPdf, file_b: testPdf });
+check('pdf_compare', !r.isError && r.text.includes('identical'));
+
+r = await call('pdf_redact', { file: testPdf, terms: ['geheim'] });
+const redPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
+check('pdf_redact Datei', redPath && redPath.endsWith('.pdf'));
+
+r = await call('template_render', { template: '<h1>{{t}}</h1>', data: { t: 'x' } });
+check('template_render', !r.isError && r.text.includes('.pdf'));
+
+r = await call('chart_render', { config: { type: 'bar', data: {} } });
+check('chart_render', !r.isError && r.text.includes('.png'));
+
+r = await call('qr_code', { text: 'https://bigapi.dev', format: 'svg' });
+const qrPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
+check('qr_code svg-Endung', qrPath && qrPath.endsWith('.svg'), qrPath || r.text.slice(0, 120));
+
+r = await call('image_to_pdf', { files: [testPdf] });
+check('image_to_pdf', !r.isError && r.text.includes('.pdf'));
+
+r = await call('image_c2pa_sign', { file: testPdf });
+check('image_c2pa_sign', !r.isError && r.text.includes('.jpg'));
+
+r = await call('image_c2pa_verify', { file: testPdf });
+check('image_c2pa_verify', !r.isError && r.text.includes('has_credentials'));
+
+r = await call('image_ai_label', { file: testPdf });
+check('image_ai_label', !r.isError && r.text.includes('.jpg'));
+
 // 7. Fehlerfall: Datei existiert nicht
+
 r = await call('pdf_info', { file: '/nirgendwo/fehlt.pdf' });
 check('sauberer Fehler bei fehlender Datei', r.isError && r.text.includes('file_not_found'));
 
