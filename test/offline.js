@@ -39,6 +39,11 @@ const mock = createServer(async (req, res) => {
   if (url === '/v1/md/to-docx') return send(200,
     { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ...billing },
     Buffer.from('PK\x03\x04MOCKDOCX'));
+  if (url.startsWith('/v1/discover')) return send(200, { 'content-type': 'application/json' },
+    JSON.stringify({ query: 'mock', confident: true, count: 1, matches: [{ op: 'image', method: 'POST',
+      path: '/v1/image', title: 'Resize · crop · convert · watermark', summary: 'PNG to WebP …',
+      price_cents: 1, unit: 'operation', example: 'curl -X POST …', guide: 'https://bigapi.dev/guides/image.html',
+      confidence: 1, matched_terms: ['png', 'webp'] }], next_step: 'POST /v1/image …' }));
   if (url === '/v1/text/chunk') return send(200, { 'content-type': 'application/json', ...billing },
     JSON.stringify({ chunks: [{ text: 'Hallo', tokens: 2, page: 1, heading_path: [] }], chunk_count: 1, total_tokens: 2 }));
   if (['/v1/docx/to-markdown', '/v1/xlsx/to-markdown', '/v1/pptx/to-markdown', '/v1/epub/to-markdown'].includes(url))
@@ -89,8 +94,8 @@ const check = (name, cond, extra) => { console.log((cond ? '  ✓ ' : '  ✗ ') 
 const tools = await client.listTools();
 const names = tools.tools.map(t => t.name);
 console.log(`\ntools (${names.length}):`, names.join(', '));
-check('41 Tools registriert', names.length === 41, String(names.length));
-for (const t of ['pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx', 'text_chunk', 'docx_to_markdown', 'xlsx_to_markdown', 'pptx_to_markdown', 'epub_to_markdown', 'pdf_outline', 'pdf_protect', 'pdf_unlock', 'pdf_compare', 'pdf_redact', 'pdf_verify_signature', 'email_to_pdf', 'template_render', 'chart_render', 'qr_code', 'image_to_pdf', 'image_c2pa_sign', 'image_c2pa_verify', 'image_ai_label'])
+check('42 Tools registriert', names.length === 42, String(names.length));
+for (const t of ['find_tool', 'pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx', 'text_chunk', 'docx_to_markdown', 'xlsx_to_markdown', 'pptx_to_markdown', 'epub_to_markdown', 'pdf_outline', 'pdf_protect', 'pdf_unlock', 'pdf_compare', 'pdf_redact', 'pdf_verify_signature', 'email_to_pdf', 'template_render', 'chart_render', 'qr_code', 'image_to_pdf', 'image_c2pa_sign', 'image_c2pa_verify', 'image_ai_label'])
   check(`Tool vorhanden: ${t}`, names.includes(t));
 
 const call = async (name, args) => {
@@ -127,7 +132,12 @@ r = await call('md_to_docx', { markdown: '# Hi\n\n**fett**' });
 const docxPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
 check('md_to_docx docx-Datei', docxPath && docxPath.endsWith('.docx') && readFileSync(docxPath).length > 0, docxPath || r.text.slice(0, 120));
 
+r = await call('find_tool', { query: 'convert a png to webp' });
+check('find_tool findet Operation', !r.isError && r.text.includes('"op": "image"') || r.text.includes('"op":"image"'), r.isError ? r.text.slice(0, 120) : '');
+check('find_tool liefert Beispiel mit', !r.isError && r.text.includes('curl'));
+
 // --- 0.5.0-Tools ---
+
 r = await call('text_chunk', { text: '# A\n\nHallo Welt.' });
 check('text_chunk', !r.isError && r.text.includes('chunk_count'), r.isError ? r.text.slice(0, 120) : '');
 
