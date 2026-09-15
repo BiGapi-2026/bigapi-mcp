@@ -1,6 +1,6 @@
 {
   "name": "@bigapi/mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP server for bigapi.dev – file operations for AI agents: render/merge/protect/redact/compare PDFs, extract text/tables from PDF/DOCX/XLSX/PPTX/EPUB, RAG chunking, charts, QR, email to PDF, C2PA Content Credentials. One cent per operation.",
   "main": "index.js",
   "scripts": {
