@@ -25,9 +25,13 @@ Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file
 | `text_chunk` | Text/Markdown → **RAG-ready chunks** (token-based, heading-aware, overlap) |
 | `docx_to_markdown` / `xlsx_to_markdown` / `pptx_to_markdown` / `epub_to_markdown` | Office files & e-books → clean Markdown |
 | `pdf_outline` | Bookmark/chapter outline with target pages as JSON |
+| `pdf_attachments` | Embedded files out of a PDF – **ZUGFeRD / Factur-X e-invoice XML**, CSVs, images. JSON or ZIP |
+| `html_to_markdown` | HTML you already have → readable Markdown, navigation stripped. No browser, milliseconds |
 | `pdf_protect` / `pdf_unlock` | AES-256 password protection on and off |
 | `pdf_compare` | Page-by-page visual diff – JSON report or red-highlighted diff PDF |
 | `pdf_redact` | **Guaranteed removal**: rasterise, black out, rebuild – text provably gone |
+| `pdf_sanitize` | Strip the invisible: JavaScript, open-actions, form fields, embedded files – rewritten, so orphaned objects go too |
+| `pdf_linearize` | Fast web view: browsers show page one before the whole file has loaded |
 | `pdf_verify_signature` | Who signed, when, unchanged since? (integrity, no CA chain) |
 | `email_to_pdf` | .eml emails → clean archive PDFs |
 | `template_render` | Handlebars + JSON data → PDF / PNG / HTML |

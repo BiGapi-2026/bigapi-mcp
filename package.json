@@ -1,7 +1,7 @@
 {
   "name": "@bigapi/mcp",
-  "version": "0.6.0",
-  "description": "MCP server for bigapi.dev – file operations for AI agents: render/merge/protect/redact/compare PDFs, extract text/tables from PDF/DOCX/XLSX/PPTX/EPUB, RAG chunking, charts, QR, email to PDF, C2PA Content Credentials. One cent per operation.",
+  "version": "0.7.0",
+  "description": "MCP server for bigapi.dev – file operations for AI agents: render/merge/protect/redact/sanitize/compare PDFs, extract text/tables/e-invoice attachments from PDF/DOCX/XLSX/PPTX/EPUB/HTML, RAG chunking, charts, QR, email to PDF, C2PA Content Credentials. One cent per operation.",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -22,7 +22,11 @@
     "extraction",
     "tables",
     "ocr",
-    "docx"
+    "docx",
+    "sanitize",
+    "zugferd",
+    "html-to-markdown",
+    "rag"
   ],
   "author": "",
   "license": "MIT",

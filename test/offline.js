@@ -19,6 +19,21 @@ const mock = createServer(async (req, res) => {
     JSON.stringify({ key: 'bigapi_mocktestkey', key_id: 'k_1', free_operations: 100, monthly_cap_cents: 1000, price_per_operation_cents: 1, upgrade_url: 'https://console.bigapi.dev/#k' }));
   if (url === '/v1/balance') return send(200, { 'content-type': 'application/json' },
     JSON.stringify({ key: { id: 'k_1' }, balance_cents: 9900, free_operations_remaining: 97 }));
+  if (url === '/v1/pdf/attachments') {
+    const raw = body.toString('latin1');
+    if (raw.includes('name="output"') && raw.includes('zip'))
+      return send(200, { 'content-type': 'application/zip', ...billing }, Buffer.from('PK\u0003\u0004mock'));
+    return send(200, { 'content-type': 'application/json', ...billing },
+      JSON.stringify({ count: 1, attachments: [{ filename: 'factur-x.xml', content_type: 'application/xml', is_einvoice: true, text: '<rsm:CrossIndustryInvoice/>' }] }));
+  }
+  if (url === '/v1/pdf/sanitize') return send(200, { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-1.7 sanitized'));
+  if (url === '/v1/pdf/linearize') return send(200, { 'content-type': 'application/pdf', ...billing }, Buffer.from('%PDF-1.7 linearized'));
+  if (url === '/v1/html/to-markdown') {
+    const b = JSON.parse(body.toString());
+    if ((b.output || 'md') === 'json') return send(200, { 'content-type': 'application/json', ...billing },
+      JSON.stringify({ markdown: '# Titel\n\nText', title: 'Titel', mode: b.mode || 'article' }));
+    return send(200, { 'content-type': 'text/markdown; charset=utf-8', ...billing }, '# Titel\n\nText');
+  }
   if (url === '/v1/pdf/to-markdown') {
     const raw = body.toString('latin1');
     const wantsJson = raw.includes('name="output"') && raw.includes('json');
@@ -94,7 +109,7 @@ const check = (name, cond, extra) => { console.log((cond ? '  ✓ ' : '  ✗ ') 
 const tools = await client.listTools();
 const names = tools.tools.map(t => t.name);
 console.log(`\ntools (${names.length}):`, names.join(', '));
-check('42 Tools registriert', names.length === 42, String(names.length));
+check('46 Tools registriert', names.length === 46, String(names.length));
 for (const t of ['find_tool', 'pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx', 'text_chunk', 'docx_to_markdown', 'xlsx_to_markdown', 'pptx_to_markdown', 'epub_to_markdown', 'pdf_outline', 'pdf_protect', 'pdf_unlock', 'pdf_compare', 'pdf_redact', 'pdf_verify_signature', 'email_to_pdf', 'template_render', 'chart_render', 'qr_code', 'image_to_pdf', 'image_c2pa_sign', 'image_c2pa_verify', 'image_ai_label'])
   check(`Tool vorhanden: ${t}`, names.includes(t));
 
@@ -179,6 +194,28 @@ check('image_c2pa_verify', !r.isError && r.text.includes('has_credentials'));
 
 r = await call('image_ai_label', { file: testPdf });
 check('image_ai_label', !r.isError && r.text.includes('.jpg'));
+
+// 6b. Welle 5
+
+r = await call('pdf_attachments', { file: testPdf });
+check('pdf_attachments json', !r.isError && r.text.includes('factur-x.xml') && r.text.includes('is_einvoice'));
+
+r = await call('pdf_attachments', { file: testPdf, output: 'zip' });
+const zipPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
+check('pdf_attachments zip-Endung', zipPath && zipPath.endsWith('.zip'), zipPath || r.text.slice(0, 120));
+
+r = await call('pdf_sanitize', { file: testPdf });
+check('pdf_sanitize', !r.isError && r.text.includes('.pdf'));
+
+r = await call('pdf_linearize', { file: testPdf });
+check('pdf_linearize', !r.isError && r.text.includes('.pdf'));
+
+r = await call('html_to_markdown', { html: '<nav>weg</nav><h1>Titel</h1><p>Text</p>' });
+check('html_to_markdown json', !r.isError && r.text.includes('Titel'));
+
+r = await call('html_to_markdown', { html: '<h1>Titel</h1>', output: 'md' });
+const htmlMdPath = !r.isError && JSON.parse(r.text.slice(r.text.indexOf('{'))).output_path;
+check('html_to_markdown md-Endung', htmlMdPath && htmlMdPath.endsWith('.md'), htmlMdPath || r.text.slice(0, 120));
 
 // 7. Fehlerfall: Datei existiert nicht
 
