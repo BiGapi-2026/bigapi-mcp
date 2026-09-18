@@ -49,6 +49,25 @@ Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file
 
 Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as `dev.bigapi/mcp`.
 
+## Lean by default
+
+The server starts **lean**: it lists only four tools, so your context stays free.
+
+| Tool | What it does |
+|---|---|
+| `find_tool` | Describe your task in plain words, get the matching operation with a ready-to-run example. Free, no key. |
+| `run_operation` | Run **any** bigapi operation by name, including ones added after your client started. |
+| `enable_tools` | Load dedicated tools on demand, e.g. `["pdf_redact","ocr"]` or `["all"]`. |
+| `get_access` / `get_balance` | Get a free key, check credit. |
+
+All 40+ operations are available from the first second through `run_operation`; the dedicated
+tools are a convenience, not a requirement. Want the full list right away?
+Set `BIGAPI_TOOLS=all` in the server environment.
+
+Why: every tool definition costs context in your client, and a model choosing between five
+descriptions picks better than one scanning forty-six.
+
+
 ## Install
 
 Requires Node 18+. No API key needed up front – the agent can call `get_access` itself.

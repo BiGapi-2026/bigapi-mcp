@@ -1,0 +1,22 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const ok = (n, c, e='') => console.log(`${c ? '  ✓' : '  ✗'} ${n}${e ? ' – ' + e : ''}`);
+const cfg = mkdtempSync(join(tmpdir(), 'bigapi-cfg-'));
+writeFileSync(join(cfg, 'a.pdf'), '%PDF-1.7 a'); writeFileSync(join(cfg, 'b.pdf'), '%PDF-1.7 b');
+const t = new StdioClientTransport({ command: 'node', args: ['src/index.js'],
+  env: { ...process.env, BIGAPI_CONFIG_DIR: cfg, BIGAPI_KEY: 'bigapi_test', BIGAPI_URL: 'http://127.0.0.1:9500' } });
+const c = new Client({ name: 'lean2', version: '0.0.1' }); await c.connect(t);
+let r = await c.callTool({ name: 'run_operation', arguments: { op: 'gibt/es/nicht', params: {} } });
+ok('unbekannte Operation: sauberer Hinweis', r.isError === true && /unknown operation/.test(r.content[0].text), r.content[0].text.slice(0,60));
+r = await c.callTool({ name: 'run_operation', arguments: { op: 'text/chunk', params: { text: 'Hallo Welt', maxTokens: 50 } } });
+ok('JSON-Operation laeuft durch run_operation', !r.isError && /chunk_count/.test(r.content[0].text), r.content[0].text.slice(0,60));
+r = await c.callTool({ name: 'run_operation', arguments: { op: 'pdf/merge', files: [join(cfg,'a.pdf'), join(cfg,'b.pdf')], output_path: join(cfg,'out') } });
+ok('Datei-Operation laeuft durch run_operation', !r.isError && /output_path/.test(r.content[0].text), r.content[0].text.replace(/\s+/g,' ').slice(0,90));
+r = await c.callTool({ name: 'run_operation', arguments: { op: 'ocr', params: {} } });
+ok('Operation ohne Datei: verstaendlicher Fehler', r.isError === true && /needs at least one file/.test(r.content[0].text), r.content[0].text.slice(0,60));
+r = await c.callTool({ name: 'find_tool', arguments: { query: 'png zu webp' } });
+ok('find_tool funktioniert im schlanken Modus', !r.isError || /discover/.test(r.content[0].text), r.content[0].text.slice(0,50));
+await c.close(); process.exit(0);
