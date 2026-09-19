@@ -5,53 +5,15 @@
 
 MCP server for **[bigapi.dev](https://bigapi.dev)** – *deterministic file operations for AI agents.*
 
-Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself – over plain HTTPS, with one key, nothing to install server-side:
+Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself – over plain HTTPS, with one key, nothing to install server-side.
 
-| Tool | What it does |
-|---|---|
-| `render` | HTML / Markdown / URL → **PDF** or **PNG** via server-side Chromium (reports, invoices, offers, documentation) |
-| `screenshot` | Any public URL, real device presets (desktop / laptop / tablet / mobile), full page |
-| `ocr` | Scanned PDF or photo → searchable PDF, plain text, or per-page JSON (`deu`, `eng`, `deu+eng`, …) |
-| `office_to_pdf` | DOCX, XLSX, PPTX, ODT, RTF, CSV, TXT → PDF via server-side LibreOffice |
-| `pdf_to_pdfa` | PDF → archival **PDF/A-2b** with embedded fonts (long-term storage, compliance) |
-| `pdf_merge` · `pdf_split` · `pdf_rotate` · `pdf_compress` | The PDF basics |
-| `pdf_to_images` | PDF pages → JPEG/PNG, e.g. to look at a document with a vision model |
-| `pdf_to_markdown` | PDF → clean, reflowed **Markdown** (summarising, RAG ingestion) |
-| `pdf_extract_tables` | Tables out of a PDF as **JSON rows or CSV** (invoices, reports, statements) |
-| `pdf_info` | Page count, title, PDF version, encryption, page size – as JSON |
-| `url_to_markdown` | Any public web page (JavaScript included) → GitHub-flavoured Markdown |
-| `md_to_docx` | Markdown – e.g. an LLM answer – → formatted **Word** document |
-| `find_tool` | **Describe your task in plain words** → the matching operation with example, price and guide. Free, no key |
-| `text_chunk` | Text/Markdown → **RAG-ready chunks** (token-based, heading-aware, overlap) |
-| `docx_to_markdown` / `xlsx_to_markdown` / `pptx_to_markdown` / `epub_to_markdown` | Office files & e-books → clean Markdown |
-| `pdf_outline` | Bookmark/chapter outline with target pages as JSON |
-| `pdf_attachments` | Embedded files out of a PDF – **ZUGFeRD / Factur-X e-invoice XML**, CSVs, images. JSON or ZIP |
-| `html_to_markdown` | HTML you already have → readable Markdown, navigation stripped. No browser, milliseconds |
-| `pdf_protect` / `pdf_unlock` | AES-256 password protection on and off |
-| `pdf_compare` | Page-by-page visual diff – JSON report or red-highlighted diff PDF |
-| `pdf_redact` | **Guaranteed removal**: rasterise, black out, rebuild – text provably gone |
-| `pdf_sanitize` | Strip the invisible: JavaScript, open-actions, form fields, embedded files – rewritten, so orphaned objects go too |
-| `pdf_linearize` | Fast web view: browsers show page one before the whole file has loaded |
-| `pdf_verify_signature` | Who signed, when, unchanged since? (integrity, no CA chain) |
-| `email_to_pdf` | .eml emails → clean archive PDFs |
-| `template_render` | Handlebars + JSON data → PDF / PNG / HTML |
-| `chart_render` | Chart.js config → chart PNG, server-side |
-| `qr_code` | Text/URL → QR code (PNG/SVG) |
-| `image_to_pdf` | Images → one PDF (auto size or A4/Letter) |
-| `image_c2pa_sign` / `image_c2pa_verify` | **C2PA Content Credentials** for AI images (EU AI Act Art. 50) |
-| `image_ai_label` | Visible "AI-generated" stamp + EXIF marking |
-| `image_process` | Resize, crop, rotate, convert (webp/avif/…), compress, strip EXIF, watermark – one call |
-| `image_info` | Format, dimensions, color space, EXIF/ICC presence |
-| `get_access` | Free API key, instantly, no signup – 100 free operations that **never expire** |
-| `get_balance` · `get_usage` · `set_monthly_cap` · `get_pricing` | Account |
-
-**$0.01 per operation. 100 free. Free operations and balance never expire. Failed calls are free.** Servers in Germany, GDPR, files deleted after delivery.
+**$0.01 per operation. 100 free. Free operations and balance never expire. Failed calls are free.** Servers in Germany, GDPR, files deleted after delivery. Every operation ships with a published proof that it does what it promises.
 
 Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as `dev.bigapi/mcp`.
 
 ## Lean by default
 
-The server starts **lean**: it lists only four tools, so your context stays free.
+The server starts **lean**: it lists five tools, so your context stays free.
 
 | Tool | What it does |
 |---|---|
@@ -66,6 +28,23 @@ Set `BIGAPI_TOOLS=all` in the server environment.
 
 Why: every tool definition costs context in your client, and a model choosing between five
 descriptions picks better than one scanning forty-six.
+
+## What you can run
+
+All 40+ operations go through `run_operation` (or their own tool after `enable_tools`).
+Ask `find_tool` in plain words instead of memorising this list:
+
+- **PDF basics** — merge, split, rotate, compress, page info, outline, compare, linearize
+- **PDF content** — to Markdown, to images, extract tables, extract attachments (**ZUGFeRD / Factur-X invoice XML**)
+- **PDF safety** — redact (rasterise and rebuild, text provably gone), sanitize (JavaScript, actions, embedded files), password on/off, verify signature
+- **PDF archival** — PDF/A-2b with embedded fonts and an output intent, checked with veraPDF
+- **Documents** — Office and e-books to PDF or Markdown (DOCX, XLSX, PPTX, ODT, EPUB), Markdown to Word, .eml to PDF
+- **Web and rendering** — HTML/Markdown/URL to PDF or PNG, full-page screenshots with device presets, HTML or URL to clean Markdown, Handlebars templates, charts, QR codes
+- **Images** — resize, crop, convert (WebP/AVIF/…), compress, strip metadata, watermark, image info
+- **AI transparency** — **C2PA Content Credentials** sign and verify, visible "AI-generated" label with EXIF marking (EU AI Act Art. 50)
+- **Text for RAG** — token-based chunking, heading-aware, with overlap
+- **Account** — free key, balance, usage, monthly cap, pricing
+
 
 
 ## Install
