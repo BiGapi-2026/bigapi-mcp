@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "dev.bigapi/mcp",
-  "description": "File operations for AI agents: PDF, extraction, OCR, images. $0.01/op, 100 free.",
+  "description": "The output layer for AI agents: turn what an agent produced into a finished file.",
   "repository": {
     "url": "https://github.com/BiGapi-2026/bigapi-mcp",
     "source": "github"
   },
-  "version": "0.8.1",
+  "version": "0.8.2",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@bigapi/mcp",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "transport": {
         "type": "stdio"
       },

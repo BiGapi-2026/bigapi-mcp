@@ -3,9 +3,11 @@
 [![npm version](https://img.shields.io/npm/v/%40bigapi%2Fmcp)](https://www.npmjs.com/package/@bigapi/mcp)
 [![bigapi-mcp MCP server](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp/badges/score.svg)](https://glama.ai/mcp/servers/BiGapi-2026/bigapi-mcp)
 
-MCP server for **[bigapi.dev](https://bigapi.dev)** – *deterministic file operations for AI agents.*
+MCP server for **[bigapi.dev](https://bigapi.dev)** – *the output layer for AI agents.*
 
-Gives Claude Desktop, Cursor, Cline, Windsurf and any MCP-capable agent the file operations an LLM cannot do itself – over plain HTTPS, with one key, nothing to install server-side.
+Your agent produced something. bigapi turns it into a finished file – and reads files back in.
+Merge, redact, OCR, convert, sign, validate: the operations an LLM cannot do itself, over plain HTTPS,
+with one key, nothing to install server-side.
 
 **$0.01 per operation. 100 free. Free operations and balance never expire. Failed calls are free.** Servers in Germany, GDPR, files deleted after delivery. Every operation ships with a published proof that it does what it promises.
 
