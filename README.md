@@ -21,10 +21,10 @@ The server starts **lean**: it lists five tools, so your context stays free.
 |---|---|
 | `find_tool` | Describe your task in plain words, get the matching operation with a ready-to-run example. Free, no key. |
 | `run_operation` | Run **any** bigapi operation by name, including ones added after your client started. |
-| `enable_tools` | Load dedicated tools on demand, e.g. `["pdf_redact","ocr"]` or `["all"]`. |
+| `enable_tools` | Load dedicated tools on demand, e.g. `["pdf_redact","einvoice_validate"]` or `["all"]`. Built from the live catalogue, so new operations appear without an update. |
 | `get_access` / `get_balance` | Get a free key, check credit. |
 
-All 40+ operations are available from the first second through `run_operation`; the dedicated
+All 60+ operations are available from the first second through `run_operation`; the dedicated
 tools are a convenience, not a requirement. Want the full list right away?
 Set `BIGAPI_TOOLS=all` in the server environment.
 
@@ -33,7 +33,7 @@ descriptions picks better than one scanning forty-six.
 
 ## What you can run
 
-All 40+ operations go through `run_operation` (or their own tool after `enable_tools`).
+All 60+ operations, including e-invoices (XRechnung, ZUGFeRD), bank statements and PDF accessibility checks, go through `run_operation` (or their own tool after `enable_tools`).
 Ask `find_tool` in plain words instead of memorising this list:
 
 - **PDF basics** — merge, split, rotate, compress, page info, outline, compare, linearize

@@ -76,7 +76,11 @@ export async function opFiles(path, files, fields = {}, outName, idem) {
 
 async function saveResponse(res, outName) {
   const ct = res.headers.get('content-type') || 'application/octet-stream';
-  const ext = ct.includes('pdf') ? '.pdf' : ct.includes('png') ? '.png' : ct.includes('jpeg') ? '.jpg' : ct.includes('webp') ? '.webp' : ct.includes('avif') ? '.avif' : ct.includes('zip') ? '.zip' : ct.includes('tiff') ? '.tiff' : ct.includes('gif') ? '.gif' : ct.includes('markdown') ? '.md' : ct.includes('wordprocessingml') ? '.docx' : ct.includes('csv') ? '.csv' : ct.includes('svg') ? '.svg' : ct.includes('text/html') ? '.html' : ct.includes('text/plain') ? '.txt' : '';
+  // Endung aus dem Inhaltstyp; spezielle Office-Typen zuerst, weil sie "xml" oder "zip" im Namen tragen
+  const EXT = [['spreadsheetml', '.xlsx'], ['wordprocessingml', '.docx'], ['presentationml', '.pptx'], ['pdf', '.pdf'], ['png', '.png'],
+    ['jpeg', '.jpg'], ['webp', '.webp'], ['avif', '.avif'], ['zip', '.zip'], ['tiff', '.tiff'], ['gif', '.gif'], ['svg', '.svg'],
+    ['markdown', '.md'], ['csv', '.csv'], ['text/html', '.html'], ['xml', '.xml'], ['cbor', '.cbor'], ['application/json', '.json'], ['text/plain', '.txt']];
+  const ext = (EXT.find(([k]) => ct.includes(k)) || [, ''])[1];
   let out;
   if (outName) { out = resolve(outName); if (!extname(out)) out += ext; }
   else { await mkdir(OUT_DIR, { recursive: true }); out = join(OUT_DIR, `bigapi-${Date.now()}${ext}`); }

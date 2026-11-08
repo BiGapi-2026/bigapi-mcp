@@ -1,0 +1,2678 @@
+{
+  "version": "2026-11-05.3",
+  "pricing": {
+    "currency": "USD",
+    "unit": "cent",
+    "default_cents": 1,
+    "free_on_signup": 100,
+    "free_expires": false
+  },
+  "ops": [
+    {
+      "op": "render",
+      "method": "POST",
+      "path": "/v1/render",
+      "input": "json",
+      "output": "application/pdf | image/png",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "HTML to PDF, Markdown to PDF or URL/web page to PDF and PNG — Chromium-rendered with real fonts, CSS, page breaks, headers and footers. No text-to-PDF makeshift.",
+      "params": [
+        {
+          "name": "html",
+          "type": "string",
+          "desc": "HTML document or fragment to turn into a PDF or PNG. Send one of html, markdown or url; if several are sent, url wins over markdown over html and X-BigAPI-Warnings says which one was used.",
+          "default_note": "none, send exactly one of html, markdown or url"
+        },
+        {
+          "name": "markdown",
+          "type": "string",
+          "desc": "Markdown text to render with GitHub-flavoured rules (tables, task lists, fenced code). Use it instead of html when the agent wrote Markdown.",
+          "default_note": "none, send exactly one of html, markdown or url"
+        },
+        {
+          "name": "url",
+          "type": "string",
+          "desc": "Public http(s) address of a web page to print, e.g. to archive it. Our browser in Germany loads it; pages behind a login cannot be reached.",
+          "default_note": "none, send exactly one of html, markdown or url"
+        },
+        {
+          "name": "css",
+          "type": "string",
+          "desc": "Extra CSS added before printing, e.g. to hide a cookie banner or change fonts. Leave it out to print the page as it is.",
+          "default_note": "none, the page keeps its own styles"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "enum": [
+            "pdf",
+            "png"
+          ],
+          "default": "pdf",
+          "desc": "Output file: pdf for documents to send or archive, png for an image of the page."
+        },
+        {
+          "name": "pdf",
+          "type": "object",
+          "desc": "Page setup for PDF output, as an object: format (paper size: A4, Letter, Legal, A3 …), landscape (true for wide pages), margin ({top, right, bottom, left} with units, e.g. \"10mm\"), printBackground (false drops background colours and images), scale (0.1 to 2).",
+          "default_note": "A4 portrait, margins 20 mm top and bottom and 18 mm left and right, backgrounds printed, scale 1"
+        },
+        {
+          "name": "png",
+          "type": "object",
+          "desc": "Image size for PNG output, as an object: width and height of the browser window in pixels, fullPage (false captures only the visible window), deviceScaleFactor (2 for sharp images on high-resolution screens).",
+          "default_note": "1280 × 800 px window, whole page, deviceScaleFactor 1"
+        },
+        {
+          "name": "waitUntil",
+          "type": "string",
+          "enum": [
+            "load",
+            "domcontentloaded",
+            "networkidle0",
+            "networkidle2"
+          ],
+          "desc": "When to take the snapshot. networkidle0: wait until the page has made no network requests for 500 ms; safest for pages that load content with JavaScript, slowest. networkidle2: allow up to 2 open requests; use it when analytics or a chat widget never go quiet. load: all images, styles and scripts loaded. domcontentloaded: HTML read only; fastest, but images and web fonts may be missing.",
+          "default_note": "networkidle0 for url, load for html and markdown"
+        },
+        {
+          "name": "timeoutMs",
+          "type": "integer",
+          "default": 30000,
+          "desc": "How long to wait for the page, in milliseconds, before giving up with an error. Raise it for slow pages; values above 60000 are capped at 60000."
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "forbid": [
+          "url"
+        ],
+        "max_pages": 50
+      }
+    },
+    {
+      "op": "pdf_merge",
+      "method": "POST",
+      "path": "/v1/pdf/merge",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Combine two or more PDFs into one, in the order given.",
+      "params": [
+        {
+          "name": "files",
+          "type": "file[]",
+          "required": true,
+          "desc": "Two or more PDF files, combined in the order sent. Multipart field name: files[]."
+        }
+      ]
+    },
+    {
+      "op": "pdf_split",
+      "method": "POST",
+      "path": "/v1/pdf/split",
+      "input": "multipart",
+      "output": "application/pdf | application/zip",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Split a PDF or delete pages: keep ranges like 1-3,7,9-z in a new file — extract pages, remove pages, cut a document apart.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to take pages from."
+        },
+        {
+          "name": "pages",
+          "type": "string",
+          "default": "1-z",
+          "desc": "Pages to keep, e.g. 1-3,7 or 5-z (z is the last page). To delete pages, list the ones you want to keep. Spaces are ignored; 5-1 gives the pages in reverse order. A page that does not exist (0, or beyond the last page) returns 400 invalid_pages with an explanation."
+        }
+      ]
+    },
+    {
+      "op": "pdf_split_documents",
+      "method": "POST",
+      "path": "/v1/pdf/split-documents",
+      "input": "multipart",
+      "output": "application/zip | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "One PDF with many scanned receipts in, one PDF per receipt out (ZIP). Splits at blank pages, at separator sheets with a QR code or every n pages; blank pages and separators are dropped, files named by invoice number.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "The collective PDF, e.g. a stack of receipts from the document scanner. Up to 300 pages."
+        },
+        {
+          "name": "by",
+          "type": "string",
+          "enum": [
+            "auto",
+            "blank",
+            "separator",
+            "pages"
+          ],
+          "desc": "auto: blank pages and separator sheets; blank: only blank pages; separator: only separator sheets with a QR code; pages: fixed every every_pages pages.",
+          "default": "auto"
+        },
+        {
+          "name": "every_pages",
+          "type": "integer",
+          "desc": "Only for by=pages: pages per document (1 to 100).",
+          "default_note": "required with by=pages"
+        },
+        {
+          "name": "separator_text",
+          "type": "string",
+          "desc": "Text in the QR code of the separator sheet.",
+          "default": "TRENNBLATT"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "zip",
+            "json"
+          ],
+          "desc": "zip: the receipts as PDFs, the plan in the header X-BigAPI-Documents; json: only the plan (pages per document, invoice number, date, removed pages).",
+          "default": "zip"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_rotate",
+      "method": "POST",
+      "path": "/v1/pdf/rotate",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Rotate all or selected pages by 90, 180 or 270 degrees.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF whose pages should be turned."
+        },
+        {
+          "name": "angle",
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ],
+          "default": 90,
+          "desc": "Clockwise rotation in degrees: 90 turns a quarter to the right, 180 turns upside down, 270 turns a quarter to the left."
+        },
+        {
+          "name": "pages",
+          "type": "string",
+          "default": "1-z",
+          "desc": "Pages to rotate, e.g. 1,3-4 (z is the last page). All other pages stay as they are. Spaces are ignored; 5-1 gives the pages in reverse order. A page that does not exist (0, or beyond the last page) returns 400 invalid_pages with an explanation."
+        }
+      ]
+    },
+    {
+      "op": "pdf_compress",
+      "method": "POST",
+      "path": "/v1/pdf/compress",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Reduce PDF file size (REST API: files up to 100 MB): downsample images to shrink a PDF for mail or web — quality levels screen, ebook, printer, prepress. A PDF that needs a password to open gets 422 encrypted_pdf.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to make smaller."
+        },
+        {
+          "name": "level",
+          "type": "string",
+          "enum": [
+            "screen",
+            "ebook",
+            "printer",
+            "prepress"
+          ],
+          "default": "ebook",
+          "desc": "How strongly to shrink images inside the PDF. screen: smallest file, images around 72 dpi, fine for on-screen reading. ebook: good balance, around 150 dpi. printer: around 300 dpi for office printing. prepress: around 300 dpi keeping colour profiles, for professional print. Text and vector graphics stay sharp at every level."
+        }
+      ],
+      "portal": {
+        "group": "medium",
+        "max_mb": 100
+      }
+    },
+    {
+      "op": "pdf_to_images",
+      "method": "POST",
+      "path": "/v1/pdf/pages",
+      "input": "multipart",
+      "output": "image/jpeg | image/png | application/zip",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "PDF to images: rasterise pages as JPEG or PNG (PDF to JPG, PDF to PNG), 36–600 dpi, one image or a ZIP — for thumbnails, previews and vision models.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to turn into images, one image per page."
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "default": 150,
+          "desc": "Image resolution from 36 to 600. 150 suits screens and previews, 300 suits print or OCR; higher values give larger files."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to convert (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to convert.",
+          "default_note": "last page"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "enum": [
+            "jpeg",
+            "png"
+          ],
+          "default": "jpeg",
+          "desc": "Image type: jpeg for small files and photos, png for crisp text and diagrams without compression artefacts."
+        },
+        {
+          "name": "quality",
+          "type": "integer",
+          "default": 85,
+          "desc": "JPEG quality; lower values give smaller files with visible artefacts. Ignored for png."
+        }
+      ]
+    },
+    {
+      "op": "image_process",
+      "method": "POST",
+      "path": "/v1/image",
+      "input": "multipart",
+      "output": "image/*",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Resize, crop, convert (incl. HEIC from iPhones), compress, blur and strip metadata in one call — or use a preset like web, thumbnail or og.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Source image (JPEG, PNG, WebP, AVIF, TIFF, GIF, or HEIC/HEIF from an iPhone)."
+        },
+        {
+          "name": "ops",
+          "type": "json",
+          "required": true,
+          "desc": "What to do, as a JSON object; combine freely. resize: {width, height, fit}, fit inside (default) shrinks without cropping, cover fills the box and crops, contain fits with borders. crop: {left, top, width, height} in px. rotate: degrees. format: jpeg, png, webp, avif, tiff or gif to convert. quality: 1 to 100 for jpeg, webp and avif. palette: true for smaller PNGs with fewer colours. watermark: {text, position, opacity}. keepMetadata: true keeps EXIF and colour profile. blur: strength 0.3 to 100 (or true for 10) to blur the whole image. preset: one word instead of several steps: web, thumbnail, avatar, og, email or print; your own keys override the preset. Unknown keys are rejected with an explanation."
+        },
+        {
+          "name": "watermark",
+          "type": "file",
+          "desc": "Optional second image placed as a watermark, e.g. a logo; position and opacity come from ops.watermark.",
+          "default_note": "none, no image watermark"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "image_info",
+      "method": "POST",
+      "path": "/v1/image/info",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Format, size as displayed (EXIF rotation applied), colour space, alpha, density, frames, plus camera, capture time and GPS location from EXIF. iPhone photos report format heic.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Image to inspect: JPEG, PNG, WebP, AVIF, TIFF, GIF; HEIC/HEIF from iPhones is accepted too (EXIF and location are read from the original)."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "image_c2pa_sign",
+      "method": "POST",
+      "path": "/v1/image/c2pa/sign",
+      "input": "multipart",
+      "output": "image/*",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Embed C2PA Content Credentials into a JPEG/PNG/WebP and mark it as AI-generated (EU AI Act Art. 50). Signed with the BiGapi certificate of Artoption GmbH; name the creator with author.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "JPEG, PNG or WebP; HEIC/HEIF from iPhones is accepted too."
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "desc": "Title written into the Content Credentials; C2PA viewers show it.",
+          "default_note": "name of the uploaded file"
+        },
+        {
+          "name": "aiGenerated",
+          "type": "boolean",
+          "desc": "true marks the image as AI-generated (IPTC digital source type trainedAlgorithmicMedia), as Art. 50 EU AI Act expects for AI output. Set false to sign an image made by a person.",
+          "default": true
+        },
+        {
+          "name": "generator",
+          "type": "string",
+          "desc": "Name of the software or model that made the image, e.g. \"Midjourney v7\"; recorded in the credentials.",
+          "default_note": "\"unknown\""
+        },
+        {
+          "name": "author",
+          "type": "string",
+          "desc": "Creator named in the credentials, e.g. \"Redaktion Nordblick\" or \"Studio Mira\", up to 120 characters; recorded as dc:creator in a CAWG metadata assertion. The signature itself stays with BiGapi (Artoption GmbH); own certificates or private keys are not accepted.",
+          "default_note": "no creator recorded"
+        }
+      ],
+      "portal": {
+        "blocked": "Jeder könnte Bilder mit „signiert von Artoption GmbH“ versehen"
+      }
+    },
+    {
+      "op": "image_c2pa_verify",
+      "method": "POST",
+      "path": "/v1/image/c2pa/verify",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Read and validate C2PA Content Credentials of an image: who signed, which generator, is it marked AI-generated.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Image whose Content Credentials (C2PA) should be checked; the answer also says when there are none."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "barcode_read",
+      "method": "POST",
+      "path": "/v1/barcode/read",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Read barcodes and 2D codes (EAN, UPC, Code 128, QR, DataMatrix, PDF417) from a photo or PDF: type, content, position; GS1 labels split into GTIN, batch, dates, SSCC.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Photo or scan (PNG, JPEG, WebP, TIFF) or a PDF of up to 20 pages, e.g. a shipping label, delivery note or product packaging."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "PDF only: first page to read.",
+          "default_note": "page 1"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "PDF only: last page to read (at most 20 pages per call).",
+          "default_note": "last page of the PDF (up to 20 pages from first)"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "image_ai_label",
+      "method": "POST",
+      "path": "/v1/image/ai-label",
+      "input": "multipart",
+      "output": "image/*",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Stamp a visible \"AI-generated\" label onto an image and write it into the metadata: EXIF description plus the IPTC DigitalSourceType that platforms read. The 1-cent bulk tile for EU AI Act labelling.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "JPEG, PNG or WebP; HEIC/HEIF from iPhones is accepted too."
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "desc": "Label printed on the image, up to 60 characters.",
+          "default": "AI-generated"
+        },
+        {
+          "name": "position",
+          "type": "string",
+          "desc": "Corner for the label.",
+          "enum": [
+            "bottom-right",
+            "bottom-left",
+            "top-right",
+            "top-left"
+          ],
+          "default": "bottom-right"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "desc": "How the image was made, written as IPTC DigitalSourceType: generated = trainedAlgorithmicMedia, edited = compositeWithTrainedAlgorithmicMedia.",
+          "enum": [
+            "generated",
+            "edited"
+          ],
+          "default": "generated"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "desc": "Output format; leave it out to keep the input format.",
+          "enum": [
+            "jpeg",
+            "png",
+            "webp"
+          ],
+          "default_note": "same format as the input"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "screenshot",
+      "method": "POST",
+      "path": "/v1/screenshot",
+      "input": "json",
+      "output": "image/png | image/jpeg",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Full-page or viewport screenshot of a URL with device presets. The render tile already does this; this tile is the simpler front door agents search for.",
+      "params": [
+        {
+          "name": "url",
+          "type": "string",
+          "required": true,
+          "desc": "Public URL to capture."
+        },
+        {
+          "name": "device",
+          "type": "string",
+          "enum": [
+            "desktop",
+            "laptop",
+            "tablet",
+            "mobile"
+          ],
+          "default": "desktop",
+          "desc": "Browser window preset: desktop 1440 × 900, laptop 1280 × 800, tablet 834 × 1112 with touch and double resolution, mobile 390 × 844 with touch and triple resolution."
+        },
+        {
+          "name": "fullPage",
+          "type": "boolean",
+          "default": true,
+          "desc": "Capture the whole page instead of just the viewport."
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "enum": [
+            "png",
+            "jpeg"
+          ],
+          "default": "png",
+          "desc": "Image type: png for crisp text, jpeg for smaller files (see quality)."
+        },
+        {
+          "name": "quality",
+          "type": "integer",
+          "default": 85,
+          "desc": "JPEG quality from 30 to 100; lower values give smaller files. Ignored for png."
+        },
+        {
+          "name": "width",
+          "type": "integer",
+          "desc": "Overrides the window width of the device preset, in px, up to 3840.",
+          "default_note": "width of the device preset"
+        },
+        {
+          "name": "height",
+          "type": "integer",
+          "desc": "Overrides the window height of the device preset, in px, up to 2160.",
+          "default_note": "height of the device preset"
+        },
+        {
+          "name": "delayMs",
+          "type": "integer",
+          "desc": "Extra wait after the page has loaded, in ms, up to 10000; use it for animations or content that appears late.",
+          "default": 0
+        }
+      ],
+      "portal": {
+        "blocked": "Webadresse: das Portal wäre ein kostenloser Scraper und Proxy für jeden"
+      }
+    },
+    {
+      "op": "ocr",
+      "method": "POST",
+      "path": "/v1/ocr",
+      "input": "multipart",
+      "output": "application/pdf | text/plain | application/json",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "OCR for scanned PDFs and photos: image to text, scan to searchable PDF, extract text from pictures — 14 languages incl. Chinese, Japanese, Arabic, Hindi and Russian (default German + English). Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Scanned PDF or image (PNG, JPEG, TIFF)."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "default": "deu+eng",
+          "desc": "Languages of the document as Tesseract codes, joined with + (up to 4), e.g. fra+eng. Installed: ara, chi_sim, deu, eng, fra, hin, ind, ita, jpn, nld, por, rus, spa, vie. Setting the real language matters: without it Cyrillic, Devanagari, Chinese, Japanese and Arabic are not recognised at all. Codes that are not installed are dropped with a warning (unknown_language); if none is left, deu+eng is used."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "pdf",
+            "text",
+            "json"
+          ],
+          "default": "pdf",
+          "desc": "Searchable PDF, plain text, or JSON with text per page."
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "default": 300,
+          "desc": "Resolution used to read PDF pages, 100 to 600. Raise it for very small print; higher is slower. Ignored for images."
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "max_pages": 30
+      }
+    },
+    {
+      "op": "office_to_pdf",
+      "method": "POST",
+      "path": "/v1/office/pdf",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Word to PDF, Excel to PDF, PowerPoint to PDF: convert DOCX, XLSX, PPTX, ODT and more via LibreOffice. With accessible=true the PDF is tagged for PDF/UA-1, with title, language and display settings fixed. Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "DOCX, DOC, XLSX, XLS, PPTX, PPT, ODT, ODS, ODP, RTF, CSV or TXT."
+        },
+        {
+          "name": "accessible",
+          "type": "boolean",
+          "default": false,
+          "desc": "true exports a tagged PDF for PDF/UA-1 (accessible PDF): structure tags, document title (from the file properties, else the first line), language detected from the text, title shown in the viewer. Images without alternative text and tables without a header row are reported in X-BigAPI-Warnings and X-BigAPI-A11y, because only the author can fix them in the source."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_to_pdfa",
+      "method": "POST",
+      "path": "/v1/pdf/pdfa",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Archival PDF/A with embedded fonts and normalised colours: PDF/A-2b, or PDF/A-3b when the file has attachments (e-invoices stay valid). Removes JavaScript; warns when a signature is lost.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to convert into an archival PDF/A-2b file with embedded fonts and colour profile."
+        },
+        {
+          "name": "part",
+          "type": "string",
+          "enum": [
+            "auto",
+            "2",
+            "3"
+          ],
+          "default": "auto",
+          "desc": "auto makes PDF/A-3b when the PDF has embedded files (they are kept, an embedded ZUGFeRD/Factur-X invoice gets its XMP schema), otherwise PDF/A-2b. 2 removes attachments."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_accessibility_check",
+      "method": "POST",
+      "path": "/v1/pdf/accessibility",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Check a PDF for accessibility: PDF/UA-1 machine check with veraPDF plus a precheck for what veraPDF misses (missing headings, tables without header row, wrong language). Verdict, findings and failed rules as JSON.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "The PDF to check, e.g. a report, form or brochure that has to be accessible."
+        },
+        {
+          "name": "norm",
+          "type": "boolean",
+          "default": true,
+          "desc": "false skips the veraPDF run and returns only the fast precheck."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_accessibility_fix",
+      "method": "POST",
+      "path": "/v1/pdf/accessibility/fix",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Fix what accessibility checks often find: document title (also in XMP), title shown in the viewer, language (detected from the text), tagged flag and tab order. Open issues come back in X-BigAPI-A11y.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "The PDF to fix."
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "desc": "Document title, up to 300 characters.",
+          "default_note": "the existing title; if there is none, the first line of text, else the file name"
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "desc": "Document language as a BCP 47 tag such as de-DE or en-GB, or auto to detect it from the text (11 languages; the existing language stays if detection is unsure).",
+          "default": "auto"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "md_to_docx",
+      "method": "POST",
+      "path": "/v1/md/to-docx",
+      "input": "json",
+      "output": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Turn Markdown (e.g. an LLM answer) into a formatted Word document – headings, lists, tables, links. Send JSON {markdown} or upload a .md file.",
+      "params": [
+        {
+          "name": "markdown",
+          "type": "string",
+          "required": true,
+          "desc": "GitHub-flavoured Markdown. Alternatively upload a .md file as multipart field \"file\"."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "pdf_verify_signature",
+      "method": "POST",
+      "path": "/v1/pdf/verify-signature",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Check PDF signatures: who signed, when, unchanged or not, verified with the signer certificate's key (RSA, PSS, ECDSA). No CA trust-chain check. Locked or damaged PDFs get 422.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Signed PDF to check: who signed, when, and whether it was changed afterwards."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "email_to_pdf",
+      "method": "POST",
+      "path": "/v1/email/to-pdf",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Save an email as PDF, from .eml or Outlook .msg: header table, body, inline images, forwarded messages; attachments embedded as files.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-mail saved as .eml or Outlook .msg file; header, text and attachments go into the PDF."
+        },
+        {
+          "name": "pageFormat",
+          "type": "string",
+          "desc": "Paper size of the PDF.",
+          "enum": [
+            "A4",
+            "Letter"
+          ],
+          "default": "A4"
+        },
+        {
+          "name": "remoteImages",
+          "type": "boolean",
+          "desc": "Load external images (http/https). Off by default: newsletter tracking pixels would otherwise be fetched from our server. JavaScript in e-mails never runs.",
+          "default": false
+        },
+        {
+          "name": "embed",
+          "type": "boolean",
+          "default": true,
+          "desc": "Embed the attachments as files in the PDF (up to 25 MB in total); false only lists them."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "bank_statement",
+      "method": "POST",
+      "path": "/v1/bank/statement",
+      "input": "multipart",
+      "output": "application/json | spreadsheet | text/csv",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Read bank statements from online banking (CAMT.053/052/054, MT940) into transactions with counterparty, IBAN, purpose and SEPA references; checks the balances add up. Also as a DATEV booking batch.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Statement file as downloaded from online banking: CAMT XML (.xml) or MT940 text (.sta, .txt, .mt940). Not a PDF statement."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "json",
+            "xlsx",
+            "csv",
+            "datev"
+          ],
+          "desc": "json for agents; xlsx with sheets 'Buchungen' and 'Übersicht'; csv with semicolons and decimal commas for German Excel; datev: DATEV booking batch (EXTF Buchungsstapel, Windows-1252) for the tax adviser, one row per booked transaction.",
+          "default_note": "json"
+        },
+        {
+          "name": "bank_account",
+          "type": "string",
+          "desc": "Only for output=datev. Ledger account of the bank (Konto column), e.g. 1200.",
+          "default_note": "1200 with skr=03, 1800 with skr=04 (with a warning), else empty"
+        },
+        {
+          "name": "contra_account",
+          "type": "string",
+          "desc": "Only for output=datev. Clearing account for transactions no rule matches (Gegenkonto), e.g. 1590. Without it, Gegenkonto stays empty and a warning says how many.",
+          "default_note": "empty"
+        },
+        {
+          "name": "rules",
+          "type": "string",
+          "desc": "Only for output=datev. JSON list, first match wins: [{\"name\":\"Telekom\",\"account\":\"4920\"},{\"iban\":\"DE...\",\"account\":\"3400\"},{\"purpose\":\"Miete\",\"account\":\"4210\"}]. name and purpose match if contained (any case), iban exactly. Up to 200 rules.",
+          "default_note": "no rules"
+        },
+        {
+          "name": "skr",
+          "type": "string",
+          "enum": [
+            "03",
+            "04"
+          ],
+          "desc": "Only for output=datev. Chart of accounts; written to the header and used for the default bank account.",
+          "default_note": "not set"
+        },
+        {
+          "name": "consultant",
+          "type": "integer",
+          "desc": "Only for output=datev. DATEV Beraternummer (1001 to 9999999).",
+          "default_note": "empty, with a warning"
+        },
+        {
+          "name": "client",
+          "type": "integer",
+          "desc": "Only for output=datev. DATEV Mandantennummer (1 to 99999).",
+          "default_note": "empty, with a warning"
+        },
+        {
+          "name": "account_length",
+          "type": "integer",
+          "desc": "Only for output=datev. Length of ledger account numbers (4 to 8).",
+          "default": 4
+        },
+        {
+          "name": "fiscal_year_start",
+          "type": "string",
+          "desc": "Only for output=datev. Start of the fiscal year as YYYY-MM-DD. Needed when the statement covers two calendar years; bookings outside that year give datev_outside_year.",
+          "default_note": "January 1 of the booking year"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_to_markdown",
+      "method": "POST",
+      "path": "/v1/pdf/to-markdown",
+      "input": "multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Extract text from a PDF: clean, reflowed Markdown for LLM context, summaries or RAG. Scanned pages are read by OCR automatically (warning ocr_applied). Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to read. Pages without a text layer (scans) are read by OCR, up to 50 such pages; the warning ocr_applied names them. Pages that stay empty are reported as no_text_layer."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to read (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to read.",
+          "default_note": "last page"
+        },
+        {
+          "name": "layout",
+          "type": "boolean",
+          "default": false,
+          "desc": "Keep column layout instead of reflowing paragraphs."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md",
+          "desc": "Markdown file or JSON {markdown, pages, total_pages}. Pages are separated by a line with ---."
+        },
+        {
+          "name": "ocr",
+          "type": "string",
+          "enum": [
+            "auto",
+            "off"
+          ],
+          "default": "auto",
+          "desc": "auto reads pages without a text layer by OCR; off leaves them empty and only warns."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "default": "deu+eng",
+          "desc": "OCR language(s) for scanned pages, e.g. deu, eng, fra or deu+eng."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_extract_tables",
+      "method": "POST",
+      "path": "/v1/pdf/extract-tables",
+      "input": "multipart",
+      "output": "application/json | text/csv",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Extract tables from a PDF to JSON or CSV (PDF table to Excel-ready CSV) — works on invoices, reports, bank statements. Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF with a text layer that contains tables (for scans use ocr first)."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to read (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to read.",
+          "default_note": "last page"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "json",
+            "csv"
+          ],
+          "default": "json",
+          "desc": "JSON {pages:[{page, tables:[[row]]}]} or semicolon CSV."
+        },
+        {
+          "name": "minCols",
+          "type": "integer",
+          "default": 2,
+          "desc": "Minimum number of columns for a line to count as a table row. Raise it to 3 or more if ordinary text is mistaken for a table."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_info",
+      "method": "POST",
+      "path": "/v1/pdf/info",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Pages, title, author, dates (ISO 8601), PDF version, page size in mm, encryption, form and JavaScript flags as JSON. A password-locked PDF comes back with password_required true.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to inspect: page count, page size, metadata and other document facts."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "url_to_markdown",
+      "method": "POST",
+      "path": "/v1/url/to-markdown",
+      "input": "json",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Web page to Markdown/text: fetch a URL and extract the readable article — navigation and ads stripped, ready for LLM context or RAG.",
+      "params": [
+        {
+          "name": "url",
+          "type": "string",
+          "required": true,
+          "desc": "Public http(s) address of the web page to read."
+        },
+        {
+          "name": "selector",
+          "type": "string",
+          "desc": "CSS selector to read only part of the page, e.g. article or #content. Leave it out to read the whole page.",
+          "default_note": "whole page (body)"
+        },
+        {
+          "name": "includeTitle",
+          "type": "boolean",
+          "default": true,
+          "desc": "Prepend the page title as H1."
+        },
+        {
+          "name": "waitUntil",
+          "type": "string",
+          "enum": [
+            "load",
+            "networkidle0"
+          ],
+          "default": "networkidle0",
+          "desc": "When to read the page. networkidle0: wait until the page has made no network requests for 500 ms; safest for pages that load content with JavaScript. load: read as soon as images, styles and scripts are loaded; faster, and the right choice for pages that never go quiet."
+        },
+        {
+          "name": "delayMs",
+          "type": "integer",
+          "desc": "Extra wait after loading, in ms, up to 10000; use it for content that appears late.",
+          "default": 0
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md",
+          "desc": "Markdown file or JSON {markdown, title, url}."
+        }
+      ],
+      "portal": {
+        "blocked": "Webadresse: das Portal wäre ein kostenloser Scraper und Proxy für jeden"
+      }
+    },
+    {
+      "op": "epub_to_markdown",
+      "method": "POST",
+      "path": "/v1/epub/to-markdown",
+      "input": "multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Extract an e-book (EPUB) as clean Markdown for reading, summarising or RAG ingestion.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-book in EPUB format to turn into Markdown."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "md returns a Markdown file, json returns the Markdown inside a JSON object.",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "pdf_outline",
+      "method": "POST",
+      "path": "/v1/pdf/outline",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Read the bookmark/chapter outline of a PDF as JSON with target pages – chapter boundaries for clean RAG chunking.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to read the outline from."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "text_chunk",
+      "method": "POST",
+      "path": "/v1/text/chunk",
+      "input": "json | multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Split text for embeddings: turn text/Markdown into RAG-ready chunks — token-based sizing, heading-aware boundaries, overlap, heading path and page metadata per chunk. The standard step before a vector DB.",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "desc": "Text or Markdown to split into chunks for embeddings (or upload a file instead).",
+          "default_note": "none, send text or a file"
+        },
+        {
+          "name": "maxTokens",
+          "type": "integer",
+          "desc": "Chunk size in tokens, 50 to 8000. 512 suits most embedding models; use the limit of your model if it is smaller.",
+          "default": 512
+        },
+        {
+          "name": "overlap",
+          "type": "integer",
+          "desc": "Tokens repeated at the start of the next chunk so no sentence loses its context; at most half of maxTokens.",
+          "default": 0
+        },
+        {
+          "name": "splitOn",
+          "type": "string",
+          "desc": "heading starts a new chunk at every heading so chunks follow the chapters; paragraph fills chunks paragraph by paragraph up to maxTokens.",
+          "enum": [
+            "heading",
+            "paragraph"
+          ],
+          "default": "heading"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "docx_to_markdown",
+      "method": "POST",
+      "path": "/v1/docx/to-markdown",
+      "input": "multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Extract text from a Word document: DOCX to clean Markdown — headings, lists and tables preserved.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Word document in .docx format (for old .doc use office/pdf)."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "md returns a Markdown file, json returns the Markdown inside a JSON object.",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "xlsx_to_markdown",
+      "method": "POST",
+      "path": "/v1/xlsx/to-markdown",
+      "input": "multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Extract text from a spreadsheet: XLSX to Markdown tables, one section per sheet.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Excel workbook in .xlsx format; every sheet becomes a Markdown table."
+        },
+        {
+          "name": "maxRows",
+          "type": "integer",
+          "desc": "Maximum rows per sheet, up to 20000; longer sheets are cut and marked as cut.",
+          "default": 5000
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "md returns a Markdown file, json returns the Markdown plus details per sheet.",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "pptx_to_markdown",
+      "method": "POST",
+      "path": "/v1/pptx/to-markdown",
+      "input": "multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Extract text from a presentation: PPTX to Markdown — one section per slide, bullets, speaker notes included.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PowerPoint file in .pptx format; every slide becomes a section."
+        },
+        {
+          "name": "includeNotes",
+          "type": "boolean",
+          "desc": "true adds the speaker notes under each slide.",
+          "default": true
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "md returns a Markdown file, json returns the Markdown plus details per slide.",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "pdf_protect",
+      "method": "POST",
+      "path": "/v1/pdf/protect",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Encrypt a PDF with a password: AES-256 protection with print/modify/copy permissions — password-protect a PDF in one call.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to protect."
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "desc": "User password (min 4 chars)."
+        },
+        {
+          "name": "ownerPassword",
+          "type": "string",
+          "desc": "Second password that lifts the restrictions below. If you leave it out, the user password grants full rights, so set a different one when allowPrint, allowModify or allowCopy matter.",
+          "default_note": "same as password"
+        },
+        {
+          "name": "allowPrint",
+          "type": "boolean",
+          "desc": "Whether people who open the PDF may print it.",
+          "default": true
+        },
+        {
+          "name": "allowModify",
+          "type": "boolean",
+          "desc": "Whether people who open the PDF may change it.",
+          "default": false
+        },
+        {
+          "name": "allowCopy",
+          "type": "boolean",
+          "desc": "Whether people who open the PDF may copy text and images out of it.",
+          "default": true
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_unlock",
+      "method": "POST",
+      "path": "/v1/pdf/unlock",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Remove a PDF password: decrypt a protected PDF (requires the correct password; a wrong password returns 422 wrong_password). A file without password comes back unchanged and free.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Password-protected PDF to open up."
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "desc": "The password of the PDF. A wrong password returns HTTP 422 wrong_password and costs nothing. If the PDF has no password, it is returned unchanged, not charged, with a warning."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_compare",
+      "method": "POST",
+      "path": "/v1/pdf/compare",
+      "input": "multipart",
+      "output": "application/json | application/pdf",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Visually compare two PDFs page by page: change percentage per page as JSON, or a diff PDF with changes highlighted in red. Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Two PDF files (field name \"file\", twice)."
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "desc": "Resolution for the page-by-page comparison, 50 to 200. Raise it to catch very small changes; higher is slower.",
+          "default": 100
+        },
+        {
+          "name": "threshold",
+          "type": "integer",
+          "desc": "How different a pixel must be to count as a change, 0 to 64 per colour channel. Raise it when scan noise or font smoothing shows up as changes.",
+          "default": 12
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "json returns a report of changed pages, pdf returns an overlay PDF with changes marked in red.",
+          "enum": [
+            "json",
+            "pdf"
+          ],
+          "default": "json"
+        }
+      ]
+    },
+    {
+      "op": "pdf_redact",
+      "method": "POST",
+      "path": "/v1/pdf/redact",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Redact or anonymize a PDF (GDPR): permanently remove names, addresses or any terms from contracts and reports — pages are rasterised, matches blacked out, the text is provably gone. Billed per page.",
+      "params": [
+        {
+          "name": "terms",
+          "type": "string",
+          "required": true,
+          "desc": "JSON array of terms to remove, e.g. [\"name\",\"IBAN...\"] (max 100). A plain string is split at line breaks, or at commas if it has none. Terms that are not found come back as warning terms_not_found; if none is found, warning no_matches."
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to redact (max 300 pages)."
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "desc": "Resolution of the redacted result, 72 to 300. Every page becomes an image so the removed text cannot be recovered; higher is sharper and larger.",
+          "default": 150
+        },
+        {
+          "name": "padding",
+          "type": "number",
+          "desc": "Extra black margin around each match, in points, up to 20. Raise it if letters peek out at the edges.",
+          "default": 2
+        },
+        {
+          "name": "requireMatch",
+          "type": "boolean",
+          "desc": "true: if none of the terms is found, return 422 no_matches_found instead of a PDF without any redaction.",
+          "default": false
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "max_pages": 50
+      }
+    },
+    {
+      "op": "template_render",
+      "method": "POST",
+      "path": "/v1/template/render",
+      "input": "json",
+      "output": "application/pdf | image/png | text/html",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Generate documents from data: Handlebars template + JSON to a finished PDF, PNG or HTML — invoices, reports, certificates. German helpers formatNumber and formatDate included.",
+      "params": [
+        {
+          "name": "template",
+          "type": "string",
+          "required": true,
+          "desc": "HTML with Handlebars placeholders such as {{customer.name}} or {{#each items}} … {{/each}}; filled with data and printed. {{x}} escapes HTML, {{{x}}} inserts it raw. Helpers: {{formatNumber amount 2}} gives 1.234,50 (German format, 2 decimals), {{formatDate date}} gives 6.10.2026. An unknown helper returns 400 template_compile_failed."
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "desc": "JSON values for the placeholders in template. A placeholder without a value stays empty; the response lists such names in X-BigAPI-Warnings (missing_values).",
+          "default_note": "empty object"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "desc": "pdf for a document, png for an image, html for the filled page without printing.",
+          "enum": [
+            "pdf",
+            "png",
+            "html"
+          ],
+          "default": "pdf"
+        },
+        {
+          "name": "pdf",
+          "type": "object",
+          "desc": "Page setup for PDF output, same options as render: format (A4, Letter …), landscape, margin, printBackground, scale.",
+          "default_note": "A4 portrait, margins 20 mm top and bottom and 18 mm left and right"
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "max_pages": 50
+      }
+    },
+    {
+      "op": "chart_render",
+      "method": "POST",
+      "path": "/v1/chart",
+      "input": "json",
+      "output": "image/png",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "A Chart.js configuration → finished chart as PNG. All Chart.js types (bar, line, pie, radar, …), rendered server-side.",
+      "params": [
+        {
+          "name": "config",
+          "type": "object",
+          "required": true,
+          "desc": "Chart.js configuration {type, data, options}, e.g. type bar, line or pie, as in the Chart.js documentation."
+        },
+        {
+          "name": "width",
+          "type": "integer",
+          "desc": "Image width in px, 200 to 3000.",
+          "default": 900
+        },
+        {
+          "name": "height",
+          "type": "integer",
+          "desc": "Image height in px, 150 to 3000.",
+          "default": 500
+        },
+        {
+          "name": "background",
+          "type": "string",
+          "desc": "Background as a hex colour like #f5f5f5, or transparent for a PNG without background. Invalid values fall back to white.",
+          "default": "#ffffff"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "qr_code",
+      "method": "POST",
+      "path": "/v1/qr",
+      "input": "json",
+      "output": "image/png | image/svg+xml",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Text or URL → QR code as PNG or SVG, with size, colours and error-correction level.",
+      "params": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "desc": "Content (URL, text, vCard, …), max 4000 chars. What fits depends on ecLevel: at most 2953 bytes at L, 2331 at M, 1663 at Q, 1273 at H for normal text (UTF-8 bytes); more returns 400 text_too_long_for_qr."
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "desc": "png for screens and documents, svg for print and any size without blur.",
+          "enum": [
+            "png",
+            "svg"
+          ],
+          "default": "png"
+        },
+        {
+          "name": "size",
+          "type": "integer",
+          "desc": "Width and height in px, 64 to 2000.",
+          "default": 512
+        },
+        {
+          "name": "ecLevel",
+          "type": "string",
+          "desc": "Error correction: how much of the code may be damaged or covered and still scan. L 7 %, M 15 %, Q 25 %, H 30 %; use H when a logo covers the middle.",
+          "enum": [
+            "L",
+            "M",
+            "Q",
+            "H"
+          ],
+          "default": "M"
+        },
+        {
+          "name": "dark",
+          "type": "string",
+          "desc": "Colour of the dark squares as #rrggbb. Keep strong contrast to light, or phones cannot scan it: below 3:1, or with dark lighter than light, the code is still made but X-BigAPI-Warnings warns. Invalid values fall back to black, with a warning.",
+          "default": "#000000"
+        },
+        {
+          "name": "light",
+          "type": "string",
+          "desc": "Background colour as #rrggbb. Invalid values fall back to white, with a warning.",
+          "default": "#ffffff"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "image_to_pdf",
+      "method": "POST",
+      "path": "/v1/image/to-pdf",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Combine images into one PDF: JPG to PDF, PNG to PDF, merge scans into a single document — one or many images (max 200), auto page size or fitted to A4/Letter, EXIF rotation applied.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Image files in order (field \"file\", repeatable, max 200); HEIC/HEIF from iPhones is accepted too."
+        },
+        {
+          "name": "pageSize",
+          "type": "string",
+          "desc": "auto makes every page exactly as large as its image; a4 or letter places each image centred on a standard page.",
+          "enum": [
+            "auto",
+            "a4",
+            "letter"
+          ],
+          "default": "auto"
+        },
+        {
+          "name": "margin",
+          "type": "number",
+          "desc": "Margin in mm, up to 40; only used with a4 or letter.",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "op": "pdf_attachments",
+      "method": "POST",
+      "path": "/v1/pdf/attachments",
+      "input": "multipart",
+      "output": "application/json | application/zip",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Pull embedded files out of a PDF: ZUGFeRD/Factur-X invoice XML, attached CSVs, images or sub-PDFs — as JSON (text inline, binary base64) or a ZIP. E-invoice attachments are flagged.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF with embedded files."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "json lists the embedded files and marks e-invoices (ZUGFeRD, Factur-X); zip returns the files themselves.",
+          "enum": [
+            "json",
+            "zip"
+          ],
+          "default": "json"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "desc": "Return only the attachment with this file name.",
+          "default_note": "all attachments"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "einvoice_to_json",
+      "method": "POST",
+      "path": "/v1/einvoice/to-json",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Read XRechnung, ZUGFeRD, Factur-X or Peppol BIS (XML or PDF) into clean JSON: parties, lines, VAT, totals, payment, profile and whether the format is accepted in Germany.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-invoice as XML (XRechnung UBL or CII, ZUGFeRD/Factur-X XML) or as PDF with an embedded invoice XML (ZUGFeRD, Factur-X, XRechnung hybrid)."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "einvoice_to_pdf",
+      "method": "POST",
+      "path": "/v1/einvoice/to-pdf",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Turn an XRechnung or ZUGFeRD/Factur-X invoice (XML or PDF) into a clean, printable PDF with parties, lines, VAT breakdown, totals and payment details — rendered without network access. German or English.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-invoice as XML (XRechnung UBL or CII, ZUGFeRD/Factur-X XML) or as PDF with an embedded invoice XML (ZUGFeRD, Factur-X, XRechnung hybrid)."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "desc": "Language of the labels.",
+          "enum": [
+            "de",
+            "en"
+          ],
+          "default": "de"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "einvoice_to_xlsx",
+      "method": "POST",
+      "path": "/v1/einvoice/to-xlsx",
+      "input": "multipart",
+      "output": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | text/csv",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Up to 50 e-invoices (XML or PDF) into one spreadsheet: one row per invoice plus a sheet with every line, amounts as real numbers. Or CSV for German Excel, or a DATEV booking batch (EXTF) with your accounts.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "One or more e-invoices, XML or PDF (field file, repeatable, max 50). Formats not accepted as an e-invoice in Germany (BASIC WL, MINIMUM, ZUGFeRD 1) are still listed, with the warning not_accepted_format; in xlsx, invoices without lines give no_line_items."
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "desc": "xlsx gives two sheets; csv gives the invoice rows only, with semicolons and decimal commas for German Excel; datev gives a DATEV booking batch (EXTF format version 13, Windows-1252), one booking per invoice and VAT rate.",
+          "enum": [
+            "xlsx",
+            "csv",
+            "datev"
+          ],
+          "default": "xlsx"
+        },
+        {
+          "name": "account",
+          "type": "string",
+          "desc": "datev only: expense account for incoming invoices (e.g. 3400 in SKR 03), revenue account for outgoing ones.",
+          "default_note": "left empty, with a warning"
+        },
+        {
+          "name": "contra_account",
+          "type": "string",
+          "desc": "datev only: creditor (incoming) or debtor (outgoing) account, e.g. 70000.",
+          "default_note": "left empty, with a warning"
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "desc": "datev only: incoming = supplier invoices (input VAT keys 9/8), outgoing = your own invoices (output VAT keys 3/2).",
+          "enum": [
+            "incoming",
+            "outgoing"
+          ],
+          "default": "incoming"
+        },
+        {
+          "name": "skr",
+          "type": "string",
+          "desc": "datev only: chart of accounts written to the header.",
+          "enum": [
+            "03",
+            "04"
+          ],
+          "default_note": "not set"
+        },
+        {
+          "name": "consultant",
+          "type": "integer",
+          "desc": "datev only: DATEV consultant number (Beraternummer).",
+          "default_note": "left empty, with a warning"
+        },
+        {
+          "name": "client",
+          "type": "integer",
+          "desc": "datev only: DATEV client number (Mandantennummer).",
+          "default_note": "left empty, with a warning"
+        },
+        {
+          "name": "account_length",
+          "type": "integer",
+          "desc": "datev only: length of general ledger accounts (4 to 8).",
+          "default": 4
+        },
+        {
+          "name": "fiscal_year_start",
+          "type": "string",
+          "desc": "datev only: start of the fiscal year, YYYY-MM-DD. Without it the calendar year of the invoices is used; invoices from two years are refused.",
+          "default_note": "1 January"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "einvoice_verify_identifiers",
+      "method": "POST",
+      "path": "/v1/einvoice/verify-identifiers",
+      "input": "json",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Check IBAN, Leitweg-ID (tells you the right check digits), EU VAT ID and Peppol participant ID (GLN, Leitweg-ID, VAT schemes). Structure and check digits only, no registry lookup.",
+      "params": [
+        {
+          "name": "iban",
+          "type": "string",
+          "desc": "IBAN, spaces allowed.",
+          "default_note": "not checked"
+        },
+        {
+          "name": "leitweg_id",
+          "type": "string",
+          "desc": "Leitweg-ID such as 04011000-1234512345-06.",
+          "default_note": "not checked"
+        },
+        {
+          "name": "vat_id",
+          "type": "string",
+          "desc": "VAT ID with country prefix such as DE136695976.",
+          "default_note": "not checked"
+        },
+        {
+          "name": "peppol_id",
+          "type": "string",
+          "desc": "Peppol participant ID as scheme:value, such as 0088:4035811991014 (GLN), 0204:04011000-1234512345-06 (Leitweg-ID) or 9930:DE136695976 (German VAT ID). Structure and check digits only; the Peppol directory is not queried.",
+          "default_note": "not checked"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "einvoice_validate",
+      "method": "POST",
+      "path": "/v1/einvoice/validate",
+      "input": "multipart",
+      "output": "application/json | application/pdf",
+      "price_cents": 1,
+      "unit": "invoice",
+      "summary": "Validate XRechnung 3.0 and EN 16931 invoices (incl. ZUGFeRD) with the official KoSIT validator: every error with its rule. Up to 50 at once give one overview (JSON or Excel), duplicates marked; billed per invoice.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-invoice as XML (XRechnung UBL or CII, ZUGFeRD/Factur-X XML) or as PDF with an embedded invoice XML (ZUGFeRD, Factur-X, XRechnung hybrid). Repeatable up to 50: then you get an overview with summary (valid, invalid, not_checked, not_an_einvoice, duplicates) and one item per file; files that are no e-invoice are listed, not rejected."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "json lists errors, warnings and notes (with several files: summary plus items); pdf returns a printable validation report (one file only); xlsx returns an overview sheet and a messages sheet.",
+          "enum": [
+            "json",
+            "pdf",
+            "xlsx"
+          ],
+          "default": "json"
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "desc": "Language of the PDF report and of the Excel overview.",
+          "enum": [
+            "de",
+            "en"
+          ],
+          "default": "de"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "einvoice_convert",
+      "method": "POST",
+      "path": "/v1/einvoice/convert",
+      "input": "multipart",
+      "output": "application/xml",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Convert an XRechnung or EN 16931 invoice between UBL and CII (also from a ZUGFeRD PDF). Only valid invoices; the result must pass KoSIT and map back to the same fields.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "E-invoice as XML (XRechnung UBL or CII, ZUGFeRD/Factur-X XML) or as PDF with an embedded invoice XML (ZUGFeRD, Factur-X, XRechnung hybrid)."
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "desc": "Target syntax: cii (UN/CEFACT) or ubl. Leave empty to get the other syntax of the input.",
+          "enum": [
+            "cii",
+            "ubl"
+          ],
+          "default_note": "the other syntax"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "einvoice_create",
+      "method": "POST",
+      "path": "/v1/einvoice/create",
+      "input": "json | multipart",
+      "output": "application/xml | application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Invoice data (JSON) into an XRechnung or a ZUGFeRD PDF/A-3, or your own PDF plus data into ZUGFeRD. Totals and VAT calculated, KoSIT-checked; our PDF layout carries a GiroCode.",
+      "params": [
+        {
+          "name": "number",
+          "type": "string",
+          "required": true,
+          "desc": "Invoice number."
+        },
+        {
+          "name": "issue_date",
+          "type": "string",
+          "required": true,
+          "desc": "Invoice date as YYYY-MM-DD."
+        },
+        {
+          "name": "seller",
+          "type": "object",
+          "required": true,
+          "desc": "Seller: name, street, zip, city, country (default DE), vat_id or tax_number, email, phone, contact. XRechnung needs email and phone."
+        },
+        {
+          "name": "buyer",
+          "type": "object",
+          "required": true,
+          "desc": "Buyer: name, street, zip, city, country, email (electronic address for XRechnung), vat_id for reverse charge."
+        },
+        {
+          "name": "lines",
+          "type": "array",
+          "required": true,
+          "desc": "Items: name, quantity (default 1, up to 4 decimals), unit (piece, hour, day, kg, lump sum … or a UN/ECE code), price (net, up to 4 decimals), vat_rate (default 19 for German sellers, otherwise required), vat_category (S, Z, E, AE, K, G, O; default S). Discounts as an extra line with negative quantity."
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "enum": [
+            "ubl",
+            "cii",
+            "zugferd"
+          ],
+          "desc": "ubl or cii give an XRechnung 3.0 XML; zugferd gives a PDF/A-3 with factur-x.xml (profile EN 16931).",
+          "default_note": "ubl"
+        },
+        {
+          "name": "buyer_reference",
+          "type": "string",
+          "desc": "Leitweg-ID for public buyers, otherwise e.g. order or customer number. Required for XRechnung (falls back to order_reference).",
+          "default_note": "none"
+        },
+        {
+          "name": "due_date",
+          "type": "string",
+          "desc": "Payment due date, YYYY-MM-DD.",
+          "default_note": "none (then 'payable immediately' for XRechnung)"
+        },
+        {
+          "name": "delivery_date",
+          "type": "string",
+          "desc": "Delivery or service date, YYYY-MM-DD.",
+          "default_note": "none"
+        },
+        {
+          "name": "payment",
+          "type": "object",
+          "desc": "iban, bic, account_name, reference. XRechnung needs an IBAN for bank transfer.",
+          "default_note": "none"
+        },
+        {
+          "name": "small_business",
+          "type": "boolean",
+          "desc": "true for German small businesses (§ 19 UStG): all items without VAT, with the legal note.",
+          "default_note": "false"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "enum": [
+            "invoice",
+            "credit_note"
+          ],
+          "desc": "credit_note gives a credit note (UBL CreditNote, type 381); add preceding_invoice {number, date}.",
+          "default_note": "invoice"
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "enum": [
+            "de",
+            "en"
+          ],
+          "desc": "Language of the readable PDF (zugferd only).",
+          "default": "de"
+        },
+        {
+          "name": "order_reference",
+          "type": "string",
+          "desc": "Purchase order number.",
+          "default_note": "none"
+        },
+        {
+          "name": "prepaid",
+          "type": "number",
+          "desc": "Amount already paid; reduces the amount due.",
+          "default": 0
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "desc": "Free text note on the invoice.",
+          "default_note": "none"
+        },
+        {
+          "name": "attachments",
+          "type": "array",
+          "desc": "Supporting documents embedded in the e-invoice (EN 16931 BG-24), e.g. a delivery note or goods receipt record: [{filename, content (Base64), mime?, description?, id?}]. PDF, PNG, JPEG, CSV, XLSX or ODS, up to 10 MB each and 12 MB together. format=ubl takes up to 10; cii and zugferd take one (rule CII-SR-476). With zugferd the file is also attached to the PDF/A-3.",
+          "default_note": "none"
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "desc": "Multipart only: your own invoice PDF. It stays the visible document; the invoice data from the field invoice is embedded as factur-x.xml and the PDF becomes PDF/A-3. Needs format=zugferd. If invoice number or total are not found in the PDF text, you get the warning pdf_mismatch; a PDF that already contains an e-invoice gives 422 already_einvoice.",
+          "default_note": "none (then we create the PDF ourselves)"
+        },
+        {
+          "name": "invoice",
+          "type": "string",
+          "desc": "Multipart only: the invoice data as a JSON string, the same fields as the JSON body (number, issue_date, seller, buyer, lines …).",
+          "default_note": "none"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "bank_reconcile",
+      "method": "POST",
+      "path": "/v1/bank/reconcile",
+      "input": "multipart",
+      "output": "application/json | spreadsheet",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Send e-invoices and one bank statement (CAMT or MT940): which invoices are paid, partly paid or open, and which payments match no invoice. Matches by invoice number, amount, IBAN and name.",
+      "params": [
+        {
+          "name": "files",
+          "type": "file",
+          "required": true,
+          "desc": "Up to 49 e-invoices (XRechnung or ZUGFeRD, XML or PDF) plus exactly one bank statement (CAMT .xml or MT940), in any order. Send each file as files."
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "enum": [
+            "outgoing",
+            "incoming"
+          ],
+          "desc": "outgoing: your own invoices, matched against money received; incoming: supplier invoices, matched against money paid (also by the supplier's IBAN). If no invoice matches in the chosen direction but some match in the other, the warning direction_mismatch says so; no_payments_in_direction if the statement has no payments that way.",
+          "default": "outgoing"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "json",
+            "xlsx"
+          ],
+          "desc": "json for agents; xlsx with the sheets 'Rechnungen' and 'Zahlungen ohne Rechnung'.",
+          "default": "json"
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "bank_receipt_check",
+      "method": "POST",
+      "path": "/v1/bank/receipt-check",
+      "input": "multipart",
+      "output": "application/json | spreadsheet",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Send one bank statement and the receipts you have (e-invoices, PDFs, scans, photos): each payment comes back as receipt found, missing or unsure, with the matching file. The list for the tax adviser.",
+      "params": [
+        {
+          "name": "files",
+          "type": "file",
+          "required": true,
+          "desc": "Exactly one bank statement (CAMT .xml or MT940) plus up to 49 receipts: XRechnung or ZUGFeRD, PDF, scanned PDF, JPG or PNG photo. Any order. Send each file as files. Scans and photos are read with OCR (up to 60 pages per request)."
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "enum": [
+            "out",
+            "in",
+            "all"
+          ],
+          "desc": "out: check money paid (supplier receipts); in: check money received (your own invoices); all: both.",
+          "default": "out"
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "desc": "OCR language for scans and photos (tesseract code, e.g. deu, eng, deu+eng).",
+          "default": "deu"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "json",
+            "xlsx"
+          ],
+          "desc": "json for agents; xlsx with the sheets 'Zahlungen' and 'Belege'.",
+          "default": "json"
+        }
+      ],
+      "portal": {
+        "group": "heavy"
+      }
+    },
+    {
+      "op": "pdf_sanitize",
+      "method": "POST",
+      "path": "/v1/pdf/sanitize",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Strip the invisible: JavaScript, open-actions, form fields, embedded files and metadata (author, dates) are removed, the file is rewritten. sanitize_removed lists what went, nothing_found says it was clean.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to clean of JavaScript, auto actions, form fields and attachments."
+        },
+        {
+          "name": "flatten",
+          "type": "boolean",
+          "desc": "true bakes form fields and comments into the page so what they show stays visible but nothing is interactive any more.",
+          "default": true
+        },
+        {
+          "name": "removeAttachments",
+          "type": "boolean",
+          "desc": "true removes embedded files, which can carry malware or hidden data.",
+          "default": true
+        },
+        {
+          "name": "removeMetadata",
+          "type": "boolean",
+          "desc": "Removes title, author, producer, creation and modification date and XMP metadata. On by default since 2026-10-21; set false to keep them.",
+          "default": true
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_linearize",
+      "method": "POST",
+      "path": "/v1/pdf/linearize",
+      "input": "multipart",
+      "output": "application/pdf",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Optimise a PDF for fast web view: browsers show page one before the whole file has loaded — for document portals, archives and long reports.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to optimise for Fast Web View, so a browser shows page one before the whole file has arrived."
+        }
+      ]
+    },
+    {
+      "op": "html_to_markdown",
+      "method": "POST",
+      "path": "/v1/html/to-markdown",
+      "input": "json | multipart",
+      "output": "text/markdown | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "You already have the HTML: extract the readable article as Markdown — navigation, headers, footers, sidebars and scripts stripped. No browser, no network, milliseconds. The sibling of url/to-markdown.",
+      "params": [
+        {
+          "name": "html",
+          "type": "string",
+          "required": true,
+          "desc": "Raw HTML to convert (or upload a file instead).",
+          "default_note": "none, send html or a file"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "desc": "article keeps the main text and drops navigation, header, footer, sidebars and forms; full keeps everything.",
+          "enum": [
+            "article",
+            "full"
+          ],
+          "default": "article"
+        },
+        {
+          "name": "baseUrl",
+          "type": "string",
+          "desc": "Address of the original page; relative links become full links.",
+          "default_note": "links stay as they are"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "desc": "md returns a Markdown file, json returns the Markdown with title and mode.",
+          "enum": [
+            "md",
+            "json"
+          ],
+          "default": "md"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "diff_tables",
+      "method": "POST",
+      "path": "/v1/diff/tables",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Compare two CSV or XLSX files and get the delta as JSON: added, removed and changed rows and cells, plus new and dropped columns — for price lists and inventories.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Two tables in the field file, sent twice: first the old version, then the new one (CSV, XLSX or ODS)."
+        },
+        {
+          "name": "key",
+          "type": "string",
+          "desc": "Column that identifies a row in both tables, e.g. id or article number.",
+          "default_note": "first column"
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "desc": "Sheet to compare in spreadsheet files, by name or number.",
+          "default_note": "first sheet"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "subtitles_to_transcript",
+      "method": "POST",
+      "path": "/v1/subtitles/to-transcript",
+      "input": "multipart",
+      "output": "text/plain | application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Turn SRT or WebVTT subtitles into a clean transcript: timestamps, tags and repeated lines removed, paragraphs at pauses; or JSON with start, end, speaker and text.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Subtitle file in SRT or WebVTT format (.srt or .vtt)."
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "enum": [
+            "text",
+            "json"
+          ],
+          "default": "text",
+          "desc": "text gives a readable transcript; json gives every cue with start and end in milliseconds and the speaker if the file names one."
+        },
+        {
+          "name": "timestamps",
+          "type": "boolean",
+          "default": false,
+          "desc": "true starts every line of the text transcript with its time, e.g. [01:23]. Ignored for json."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "json_schema_validate",
+      "method": "POST",
+      "path": "/v1/verify/json-schema",
+      "input": "json",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Check JSON against a JSON Schema (draft-07 or 2020-12) and get every error with its path, e.g. /items/2/price — for agents checking their own output.",
+      "params": [
+        {
+          "name": "schema",
+          "type": "object",
+          "required": true,
+          "desc": "The JSON Schema to check against; set $schema to the 2020-12 URL for draft 2020-12, otherwise draft-07 is used."
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "desc": "The JSON value to check (object, array or any JSON value)."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "pdf_to_docx",
+      "method": "POST",
+      "path": "/v1/pdf/to-docx",
+      "input": "multipart",
+      "output": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Convert PDF to Word: editable DOCX with real paragraphs and tables, not text boxes. Pure scans are read by OCR. Per page. Uses AGPL code, source: github.com/BiGapi-2026/bigapi-pdf2docx",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF to turn into an editable Word document. If no page in the range has a text layer (a pure scan), the text is read by OCR and returned as paragraphs, with the warning ocr_applied. Mixed documents keep scanned pages as images (warning no_text_layer). Password-protected PDFs return 422 encrypted_pdf, damaged ones 422 pdf_unreadable."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to convert (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to convert.",
+          "default_note": "last page"
+        },
+        {
+          "name": "ocr",
+          "type": "string",
+          "enum": [
+            "auto",
+            "off"
+          ],
+          "default": "auto",
+          "desc": "auto reads pure scans (no text layer on any page, up to 50 pages) with OCR; off returns them as images like before."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "desc": "OCR languages for scans as Tesseract codes joined with +, e.g. fra+eng. Same languages as ocr.",
+          "default": "deu+eng"
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "max_pages": 20
+      }
+    },
+    {
+      "op": "pdf_to_xlsx",
+      "method": "POST",
+      "path": "/v1/pdf/to-xlsx",
+      "input": "multipart",
+      "output": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Convert PDF tables to Excel: every table found becomes a sheet, numbers stay numbers (1.234,56 and 1,234.56), percentages become percent cells. Billed per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF with a text layer that contains tables (for scans use ocr first)."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to read (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to read.",
+          "default_note": "last page"
+        },
+        {
+          "name": "minCols",
+          "type": "integer",
+          "default": 2,
+          "desc": "Minimum number of columns for a line to count as a table row. Raise it to 3 or more if ordinary text is mistaken for a table."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "pdf_to_pptx",
+      "method": "POST",
+      "path": "/v1/pdf/to-pptx",
+      "input": "multipart",
+      "output": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "price_cents": 1,
+      "unit": "page",
+      "summary": "Turn every PDF page into a PowerPoint slide (page as image, same aspect ratio) to present or annotate a PDF. Text is not editable; use pdf/to-docx for that. Per page.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "PDF whose pages become slides, one page per slide, in order."
+        },
+        {
+          "name": "first",
+          "type": "integer",
+          "desc": "First page to convert (1 is the first page).",
+          "default_note": "first page"
+        },
+        {
+          "name": "last",
+          "type": "integer",
+          "desc": "Last page to convert; at most 300 pages per call.",
+          "default_note": "last page"
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "default": 150,
+          "desc": "Image resolution of the slides, 72 to 300. 150 is sharp on screens and projectors; 300 for printing the slides."
+        }
+      ],
+      "portal": {
+        "group": "heavy",
+        "max_pages": 20
+      }
+    },
+    {
+      "op": "office_convert",
+      "method": "POST",
+      "path": "/v1/office/convert",
+      "input": "multipart",
+      "output": "application/octet-stream",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Convert between Office formats via LibreOffice: DOC to DOCX, DOCX to ODT, XLS to XLSX, XLSX to CSV or ODS, PPT to PPTX and back. For PDF use office/pdf.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "Office file: docx, doc, odt, rtf, txt, html, xlsx, xls, ods, csv, pptx, ppt or odp."
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "enum": [
+            "docx",
+            "doc",
+            "odt",
+            "rtf",
+            "txt",
+            "html",
+            "xlsx",
+            "xls",
+            "ods",
+            "csv",
+            "pptx",
+            "ppt",
+            "odp"
+          ],
+          "desc": "Target format within the same kind of document: text (docx, doc, odt, rtf, txt, html), spreadsheet (xlsx, xls, ods, csv) or slides (pptx, ppt, odp). csv keeps only the first sheet."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "ps_to_pdf",
+      "method": "POST",
+      "path": "/v1/ps/to-pdf",
+      "input": "multipart",
+      "output": "application/pdf | image/png",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Convert EPS and PostScript files to PDF (cropped to the bounding box) or PNG, e.g. logos from print shops. Files that try to read the disk are blocked.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "EPS or PostScript file (starts with %!PS) to turn into a PDF or an image."
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "enum": [
+            "pdf",
+            "png"
+          ],
+          "default": "pdf",
+          "desc": "pdf keeps vectors and text sharp at any size; png gives an image of the first page."
+        },
+        {
+          "name": "dpi",
+          "type": "integer",
+          "default": 300,
+          "desc": "Resolution for png, 72 to 600. Ignored for pdf."
+        }
+      ],
+      "portal": {
+        "group": "medium"
+      }
+    },
+    {
+      "op": "table_to_json",
+      "method": "POST",
+      "path": "/v1/table/to-json",
+      "input": "multipart",
+      "output": "application/json",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Read a CSV, Excel or OpenDocument sheet into JSON rows keyed by the header. Separator guessed (; , tab), German and English numbers become numbers.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "desc": "CSV, TSV, XLSX, XLS or ODS file to read."
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "desc": "Sheet to read, by name or number (1 is the first sheet). CSV has only one.",
+          "default_note": "first sheet"
+        },
+        {
+          "name": "header",
+          "type": "boolean",
+          "default": true,
+          "desc": "true uses the first row as field names; false returns every row as a plain list."
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    },
+    {
+      "op": "cbor_convert",
+      "method": "POST",
+      "path": "/v1/cbor/convert",
+      "input": "multipart | json",
+      "output": "application/json | application/cbor",
+      "price_cents": 1,
+      "unit": "operation",
+      "summary": "Decode CBOR (IoT, WebAuthn, COSE) to readable JSON or encode JSON as compact CBOR. Bytes come back as base64, large integers as strings.",
+      "params": [
+        {
+          "name": "file",
+          "type": "file",
+          "desc": "A CBOR or JSON file; the direction is detected from the content unless to is set.",
+          "default_note": "none, send file, json or cborBase64"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "enum": [
+            "json",
+            "cbor"
+          ],
+          "desc": "Force the direction for an uploaded file: json decodes CBOR, cbor encodes JSON.",
+          "default_note": "detected from the file"
+        },
+        {
+          "name": "json",
+          "type": "object",
+          "desc": "JSON value to encode as CBOR (JSON request body instead of a file).",
+          "default_note": "none"
+        },
+        {
+          "name": "cborBase64",
+          "type": "string",
+          "desc": "CBOR bytes as base64 to decode to JSON (JSON request body instead of a file).",
+          "default_note": "none"
+        }
+      ],
+      "portal": {
+        "group": "light"
+      }
+    }
+  ],
+  "coming_next": []
+}

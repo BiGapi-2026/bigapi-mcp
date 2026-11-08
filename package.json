@@ -1,6 +1,6 @@
 {
   "name": "@bigapi/mcp",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "MCP server for bigapi.dev - the output layer for AI agents: turn what an agent produced into a finished file, and read files back in. $0.01 per operation.",
   "main": "index.js",
   "scripts": {

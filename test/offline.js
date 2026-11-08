@@ -99,7 +99,7 @@ const testPdf = join(cfg, 'test.pdf');
 writeFileSync(testPdf, '%PDF-1.4 mock');
 
 const transport = new StdioClientTransport({ command: 'node', args: ['src/index.js'],
-  env: { ...process.env, BIGAPI_CONFIG_DIR: cfg, BIGAPI_URL: `http://127.0.0.1:${port}`, BIGAPI_OUTPUT_DIR: cfg, BIGAPI_KEY: '' } });
+  env: { ...process.env, BIGAPI_CONFIG_DIR: cfg, BIGAPI_URL: `http://127.0.0.1:${port}`, BIGAPI_OUTPUT_DIR: cfg, BIGAPI_KEY: '', BIGAPI_TOOLS: 'all' } });
 const client = new Client({ name: 'offline', version: '0.0.1' });
 await client.connect(transport);
 
@@ -109,7 +109,7 @@ const check = (name, cond, extra) => { console.log((cond ? '  ✓ ' : '  ✗ ') 
 const tools = await client.listTools();
 const names = tools.tools.map(t => t.name);
 console.log(`\ntools (${names.length}):`, names.join(', '));
-check('46 Tools registriert', names.length === 46, String(names.length));
+check('mindestens 46 eingebaute Tools registriert', names.length >= 46, String(names.length));
 for (const t of ['find_tool', 'pdf_to_markdown', 'pdf_extract_tables', 'pdf_info', 'url_to_markdown', 'md_to_docx', 'text_chunk', 'docx_to_markdown', 'xlsx_to_markdown', 'pptx_to_markdown', 'epub_to_markdown', 'pdf_outline', 'pdf_protect', 'pdf_unlock', 'pdf_compare', 'pdf_redact', 'pdf_verify_signature', 'email_to_pdf', 'template_render', 'chart_render', 'qr_code', 'image_to_pdf', 'image_c2pa_sign', 'image_c2pa_verify', 'image_ai_label'])
   check(`Tool vorhanden: ${t}`, names.includes(t));
 
